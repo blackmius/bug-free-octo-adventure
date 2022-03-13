@@ -8,6 +8,7 @@
 class Pinger {
 
 private:
+
     static const int BUFSIZE = 64;
     const char* PROTOCOL_NAME = "ICMP";
 
@@ -25,15 +26,19 @@ private:
     std::vector<double> times;
 
 private:
+
     static std::string hostnameToIp(const char* host);
     double getMdev();    
+    void printStatistics();
 
 public:
+
+    bool ShouldEnd;
+
+public:
+
     Pinger() {}
     Pinger(const char* host);
 
     int Ping();
-    void PrintStatistics();
-
-
 };

@@ -39,6 +39,8 @@ Pinger::Pinger(const char* _host) : host(_host) {
 
     sendPacketsCount = 0;
     recvPacketsCount = 0;
+
+    ShouldEnd = false;
 }
 
 int Pinger::Ping() {
@@ -55,7 +57,7 @@ int Pinger::Ping() {
 
     printf("PING %s (%s).\n", host.c_str(), ip.c_str());
 
-    for (int i = 1;; i++) {
+    for (int i = 1; !ShouldEnd; i++) {
 
         sockaddr recvAddr;
         uint recvAddrLen;
@@ -71,6 +73,7 @@ int Pinger::Ping() {
 
         int recvResult = recvfrom(socket, buffer, sizeof(buffer), 0, &recvAddr, &recvAddrLen);
         if (recvResult > 0) {
+            
             auto endTime = high_resolution_clock::now().time_since_epoch().count();
             double time = double(endTime - startTime) * 1e-6;
             
@@ -85,10 +88,12 @@ int Pinger::Ping() {
         sleep(1);
     }
     
+    printStatistics();
+
     return 0;
 }
 
-void Pinger::PrintStatistics() {
+void Pinger::printStatistics() {
 
     double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;            
     

@@ -26,9 +26,5 @@ int main(int argc, char** argv) {
 }
 
 void onExit(int sigint) {
-    pinger->PrintStatistics();
-    
-    delete pinger;
-
-    exit(0);
+    pinger->ShouldEnd = true;    
 }
