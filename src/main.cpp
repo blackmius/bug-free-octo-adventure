@@ -18,8 +18,11 @@ int main(int argc, char** argv) {
 
     signal(SIGINT, onExit);
     
-    pinger->Ping();
-    
+    int result = pinger->Ping();
+    if (result != 0) {
+        std::cout << "Ping failure.\n";
+    }
+
     delete pinger;
 
     return 0;
