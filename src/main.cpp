@@ -3,8 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <signal.h>
-
-void onExit(int sigint);
+#include <functional>
 
 Pinger* pinger = nullptr;
 
@@ -16,8 +15,10 @@ int main(int argc, char** argv) {
 
     pinger = new Pinger(argv[1]);
 
-    signal(SIGINT, onExit);
-    
+    signal(SIGINT, [](int sigint) {
+        pinger->ShouldEnd = true;
+    });
+
     int result = pinger->Ping();
     if (result != 0) {
         std::cout << "Ping failure.\n";
@@ -26,8 +27,4 @@ int main(int argc, char** argv) {
     delete pinger;
 
     return 0;
-}
-
-void onExit(int sigint) {
-    pinger->ShouldEnd = true;    
 }
