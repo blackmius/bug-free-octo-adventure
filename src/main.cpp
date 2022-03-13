@@ -6,7 +6,7 @@
 
 void onExit(int sigint);
 
-Pinger pinger;
+Pinger* pinger = nullptr;
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -14,16 +14,21 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    pinger = Pinger(argv[1]);
+    pinger = new Pinger(argv[1]);
 
     signal(SIGINT, onExit);
     
-    pinger.Ping();
-     
+    pinger->Ping();
+    
+    delete pinger;
+
     return 0;
 }
 
 void onExit(int sigint) {
-    pinger.PrintStatistics();
+    pinger->PrintStatistics();
+    
+    delete pinger;
+
     exit(0);
 }

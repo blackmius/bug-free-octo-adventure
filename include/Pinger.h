@@ -21,7 +21,6 @@ private:
 
     int socket;
     sockaddr_in sockAddr;
-    protoent* protocol;
 
     std::vector<double> times;
 
@@ -34,7 +33,6 @@ public:
     Pinger(const char* host);
 
     int Ping();
-
     void PrintStatistics();
 
 

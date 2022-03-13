@@ -35,9 +35,7 @@ Pinger::Pinger(const char* _host) : host(_host) {
     sockAddr.sin_port = 0;
     sockAddr.sin_addr.s_addr = inet_addr(ip.c_str());
 
-    protocol = getprotobyname(PROTOCOL_NAME);
-
-    socket = ::socket(AF_INET, SOCK_RAW, protocol->p_proto);
+    socket = ::socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 
     sendPacketsCount = 0;
     recvPacketsCount = 0;
