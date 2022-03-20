@@ -3,14 +3,13 @@
 #include <netdb.h>
 #include <vector>
 
-#include "icmp_hdr_t.h"
+#include "ICMPHeader.h"
 
 class Pinger {
 
 private:
 
     static const int BUFSIZE = 64;
-    const char* PROTOCOL_NAME = "ICMP";
 
     std::string host;
     std::string ip;
@@ -18,18 +17,16 @@ private:
     int sendPacketsCount;
     int recvPacketsCount;
 
-    icmp_hdr_t icmpHeader;
+    ICMPHeader icmpHeader;
 
     int socket;
     sockaddr_in sockAddr;
 
-    std::vector<double> times;
-
-private:
-
-    static std::string hostnameToIp(const char* host);
-    double getMdev();    
-    void printStatistics();
+    double minPingTime;
+    double maxPingTime;
+    double avgPingTime;
+    double preAvgPingTime;
+    double mdev;
 
 public:
 
@@ -37,8 +34,7 @@ public:
 
 public:
 
-    Pinger() {}
     Pinger(const char* host);
 
-    int Ping();
+    void Ping();
 };

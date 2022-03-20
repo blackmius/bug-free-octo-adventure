@@ -1,6 +1,6 @@
 #include <cstdint>
 
-struct icmp_hdr_t {
+struct ICMPHeader {
     uint8_t type;
     uint8_t code;
     uint16_t checksum;
