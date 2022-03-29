@@ -77,41 +77,59 @@ void Pinger::Ping() {
         }
         sendPacketsCount++;
 
+        fd_set fd;
+        FD_ZERO(&fd);
+        FD_SET(socket, &fd);
+
+        timeval timeout {
+            2,
+            0
+        };
+
         // Получаем ответ и проверяем результат.
-        int recvResult = recvfrom(socket, buffer, sizeof(buffer), 0, &recvAddr, &recvAddrLen);
-        if (recvResult > 0) {
+        select(socket + 1, &fd, nullptr, nullptr, &timeout);
+        if (FD_ISSET(socket, &fd)) {
+            int recvResult = recvfrom(socket, buffer, sizeof(buffer), 0, &recvAddr, &recvAddrLen);
+            if (recvResult > 0) {
 
-            // Если все отлично - фиксируем время и вычисляем разность (время прошедшее с отправки). 
-            auto endTime = high_resolution_clock::now().time_since_epoch().count();
-            double time = double(endTime - startTime) * 1e-6;
-            
-            recvPacketsCount++;
+                // Если все отлично - фиксируем время и вычисляем разность (время прошедшее с отправки). 
+                auto endTime = high_resolution_clock::now().time_since_epoch().count();
+                double time = double(endTime - startTime) * 1e-6;
+                
+                recvPacketsCount++;
 
-            // Ищем наименьшее время.
-            if (time < minPingTime || minPingTime == -1) {
-                minPingTime = time;
+                // Ищем наименьшее время.
+                if (time < minPingTime || minPingTime == -1) {
+                    minPingTime = time;
+                }
+                
+                // Ищем наибольшее время
+                if (time > maxPingTime) {
+                    maxPingTime = time;
+                }
+
+                // Считаем среднее время пинга на данный момент.
+                preAvgPingTime = avgPingTime;
+                avgPingTime = (1 - 1.0 / recvPacketsCount) * avgPingTime + time / recvPacketsCount;
+                
+                // Считаем среднее отклонение на данный момент.
+                zhmih = zhmih + (time - avgPingTime) * (time - preAvgPingTime); 
+                mdev = sqrt(zhmih / recvPacketsCount);
+
+                // Выводим информацию о последнем пинге.
+                printf("%ld bytes from %s: icmp_seq=%d time=%f ms\n", sizeof(buffer), ip.c_str(), i, time);
+
+                // Если мы поставим слип сюда то в случае когда мы не получаем ответов и жмем ctrl + c прога виснет
+                //sleep(1);
             }
-            
-            // Ищем наибольшее время
-            if (time > maxPingTime) {
-                maxPingTime = time;
-            }
-
-            // Считаем среднее время пинга на данный момент.
-            preAvgPingTime = avgPingTime;
-            avgPingTime = (1 - 1.0 / recvPacketsCount) * avgPingTime + time / recvPacketsCount;
-            
-            // Считаем среднее отклонение на данный момент.
-            zhmih = zhmih + (time - avgPingTime) * (time - preAvgPingTime); 
-            mdev = sqrt(zhmih / recvPacketsCount);
-
-            // Выводим информацию о последнем пинге.
-            printf("%ld bytes from %s: icmp_seq=%d time=%f ms\n", sizeof(buffer), ip.c_str(), i, time);
         }
-
+        else {
+            printf("no answer received. time out.\n");
+        }
+        // а если поставить сюда то нет
         sleep(1);
     }
-    
+    printf("exit.\n");
     // Считаем потери пакетов.
     double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;            
 
