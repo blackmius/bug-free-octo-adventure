@@ -13,10 +13,10 @@ private:
     std::string host;
     std::string ip;
 
+    int64_t timeout = 1;
+
     int sendPacketsCount;
     int recvPacketsCount;
-
-    uint16_t pid;
 
     int socket;
     sockaddr_in sockAddr;
@@ -31,7 +31,7 @@ private:
 
 public:
 
-    bool ShouldEnd;
+    bool running = true;
 
 public:
 

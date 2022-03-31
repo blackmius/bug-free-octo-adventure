@@ -26,9 +26,9 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Делаем так, что при нажатии Ctrl + C меняется ShouldEnd.
+    // Делаем так, что при нажатии Ctrl + C меняется running.
     signal(SIGINT, [](int sigint) {
-        pinger->ShouldEnd = true;
+        pinger->running = false;
     });
 
     // Пингуем.
