@@ -1,7 +1,6 @@
 #include <string>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <vector>
 
 #include "ICMPHeader.h"
 
@@ -17,7 +16,7 @@ private:
     int sendPacketsCount;
     int recvPacketsCount;
 
-    ICMPHeader icmpHeader;
+    uint16_t pid;
 
     int socket;
     sockaddr_in sockAddr;
@@ -28,13 +27,15 @@ private:
     double preAvgPingTime;
     double mdev;
 
+    uint16_t calculateChecksum(uint16_t* buf, int32_t size);
+
 public:
 
     bool ShouldEnd;
 
 public:
 
-    Pinger(const char* host);
+    explicit Pinger(const char* host);
 
     void Ping();
 };

@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cmath>
-#include <numeric>
-#include <exception>
 
 Pinger::Pinger(const char* _host) : host(_host) {
 
@@ -23,11 +21,7 @@ Pinger::Pinger(const char* _host) : host(_host) {
 
     ip = inet_ntoa(addr);
 
-    // Настраиваем заголовок (https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#:~:text=8%20%E2%80%93%20Echo%20Request,used%20to%20ping)
-    icmpHeader.type = 8;
-    icmpHeader.code = 0;
-    icmpHeader.checksum = 0xfff7;
-    icmpHeader.data = 0;
+    pid = getpid();
 
     sockAddr.sin_family = AF_INET;
     sockAddr.sin_port = 0;
@@ -51,24 +45,34 @@ Pinger::Pinger(const char* _host) : host(_host) {
 }
 
 void Pinger::Ping() {
-
     // Для формулы которую написал Даня, но она не очень правильная, на сайте немного по-другому.
     // Я не знаю как ее назвать
     double zhmih = 0;
-    
+
     printf("PING %s (%s).\n", host.c_str(), ip.c_str());
 
     // Будет выполняться пока пользователь не нажмет Ctrl + C.
     for (int i = 1; !ShouldEnd; i++) {
-        
-        // Переменные, которые нужны для получения ответа.  
+
+        // Переменные, которые нужны для получения ответа.
         sockaddr recvAddr;
         uint recvAddrLen;
-        char buffer[BUFSIZE];
+        // 20 байт - ip-пакет + 16 байт - icmp-пакет
+        unsigned char buffer[36] = "";
+
+        ICMPHeader icmpHeader;
+        icmpHeader.type = 8;
+        icmpHeader.code = 0;
+        icmpHeader.checksum = 0;
+        icmpHeader.identifier = pid;
+        icmpHeader.sequenceNumber = sendPacketsCount + 1;
 
         // Фиксируем начальное время.
         using namespace std::chrono;
         auto startTime = high_resolution_clock::now().time_since_epoch().count();
+
+        icmpHeader.data = startTime;
+        icmpHeader.checksum = calculateChecksum((uint16_t*)&icmpHeader, sizeof icmpHeader);
 
         // Отправляем пакет и проверяем результат.
         int sendResult = sendto(socket, &icmpHeader, sizeof(icmpHeader), 0, (sockaddr*)&sockAddr, sizeof(sockAddr));
@@ -92,10 +96,18 @@ void Pinger::Ping() {
             int recvResult = recvfrom(socket, buffer, sizeof(buffer), 0, &recvAddr, &recvAddrLen);
             if (recvResult > 0) {
 
-                // Если все отлично - фиксируем время и вычисляем разность (время прошедшее с отправки). 
                 auto endTime = high_resolution_clock::now().time_since_epoch().count();
+
+                ICMPHeader* receivedIcmpHeader;
+                receivedIcmpHeader = (ICMPHeader*)&buffer[20]; // 20 байт - размер ip-пакета
+
+                if (receivedIcmpHeader->sequenceNumber != icmpHeader.sequenceNumber)
+                {
+                    startTime = icmpHeader.data;
+                }
+
                 double time = double(endTime - startTime) * 1e-6;
-                
+
                 recvPacketsCount++;
 
                 // Ищем наименьшее время.
@@ -117,21 +129,17 @@ void Pinger::Ping() {
                 mdev = sqrt(zhmih / recvPacketsCount);
 
                 // Выводим информацию о последнем пинге.
-                printf("%ld bytes from %s: icmp_seq=%d time=%f ms\n", sizeof(buffer), ip.c_str(), i, time);
-
-                // Если мы поставим слип сюда то в случае когда мы не получаем ответов и жмем ctrl + c прога виснет
-                //sleep(1);
+                printf("%ld bytes from %s: icmp_seq=%d time=%f ms\n", sizeof(buffer), ip.c_str(), receivedIcmpHeader->sequenceNumber, time);
             }
         }
         else {
             printf("no answer received. time out.\n");
         }
-        // а если поставить сюда то нет
         sleep(1);
     }
-    printf("exit.\n");
+
     // Считаем потери пакетов.
-    double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;            
+    double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;
 
     // Выводим статистику. 
     printf("\n--- %s ping statistic ---\n", ip.c_str());
@@ -141,4 +149,28 @@ void Pinger::Ping() {
     if (recvPacketsCount != 0) {
         printf("rtt min/avg/max/mdev = %f/%f/%f/%f ms\n", minPingTime, avgPingTime, maxPingTime, mdev);
     }
+}
+
+uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
+    int32_t nleft = size;
+    int32_t sum = 0;
+    uint16_t *w = buf;
+
+    while(nleft > 1)
+    {
+        sum += *w++;
+        nleft -= 2;
+    }
+
+    if(nleft == 1)
+    {
+        sum += *(uint8_t *)w;
+    }
+
+    sum = (sum >> 16) + (sum & 0xFFFF);
+    sum += (sum >> 16);
+
+    uint32_t checksum = ~sum;
+
+    return checksum;
 }
