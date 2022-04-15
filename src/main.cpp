@@ -6,7 +6,7 @@
 #include <functional>
 #include <memory>
 
-// Делаем глобальным чтобы иметь доступ в signal. С capture не приводится к обычной функции.
+// Делаем глобальным чтобы иметь доступ в signal. С capture не приводится к обычной функции
 std::unique_ptr<Pinger> pinger;
 
 int main(int argc, char** argv) {
