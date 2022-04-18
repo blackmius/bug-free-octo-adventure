@@ -1,6 +1,8 @@
 #include <string>
 #include <sys/socket.h>
 #include <netdb.h>
+#include "PingLogger.h"
+
 
 #include "ICMPHeader.h"
 
@@ -26,16 +28,15 @@ private:
     double avgPingTime;
     double preAvgPingTime;
     double mdev;
-
+    PingLogger pingLogger;
     uint16_t calculateChecksum(uint16_t* buf, int32_t size);
 
 public:
-
     bool running = true;
 
 public:
 
-    explicit Pinger(const char* host);
+    explicit Pinger(const char* host, PingLogger pingLogger);
 
     void Ping();
 };

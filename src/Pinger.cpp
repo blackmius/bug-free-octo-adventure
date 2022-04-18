@@ -1,4 +1,5 @@
 #include "Pinger.h"
+#include "PingLogger.h"
 
 #include <iostream>
 #include <arpa/inet.h>
@@ -7,25 +8,31 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <sstream>
 
 using namespace std::chrono;
 
-Pinger::Pinger(const char* _host) : host(_host) {
-
+Pinger::Pinger(const char* _host, PingLogger logger) : host(_host) {
+    std::stringstream strFormat;
     // Переводим имя хоста в ip. Желательно проверят на то, является ли _host изначально готовым ip.
-    const hostent* hostInfo = gethostbyname(_host);
+    pingLogger = logger;
+    pingLogger.log_message("Pinger object initialization");
 
+    const hostent* hostInfo = gethostbyname(_host);
     if (hostInfo == nullptr) {
         throw std::runtime_error("Ivalid host.");
     }
-
+    pingLogger.log_message("Pinger tries to get ip from address");
     in_addr addr;
     addr.s_addr = *(ulong*)hostInfo->h_addr_list[0];
 
     ip = inet_ntoa(addr);
-
+    strFormat << "Pinger got ip: " << ip.c_str() << "from address";
+    pingLogger.log_message(strFormat.str());
+    strFormat.str().resize(0);
     timeout *= 10e8;
 
+    pingLogger.log_message("Pinger tries to create socket");
     sockAddr.sin_family = AF_INET;
     sockAddr.sin_port = 1025;
     sockAddr.sin_addr.s_addr = inet_addr(ip.c_str());
@@ -35,6 +42,8 @@ Pinger::Pinger(const char* _host) : host(_host) {
         perror("");
         throw std::runtime_error("Socket creation failure");
     }
+    pingLogger.log_message("Socket was successfully created");
+
 
     sendPacketsCount = 0;
     recvPacketsCount = 0;
@@ -44,9 +53,13 @@ Pinger::Pinger(const char* _host) : host(_host) {
     avgPingTime = 0.0;
     preAvgPingTime = 0.0;
     mdev = 0.0;
+    pingLogger.log_message("Pinger object initialization complete");
+
 }
 
 void Pinger::Ping() {
+    std::stringstream strFormat;
+    pingLogger.log_message("Starting ping");
     // Для формулы которую написал Даня, но она не очень правильная, на сайте немного по-другому.
     // Я не знаю как ее назвать
     double zhmih = 0;
@@ -61,8 +74,12 @@ void Pinger::Ping() {
 
     sockaddr recvAddr;
     uint recvAddrLen;
+    strFormat << "PING " << host.c_str() << " (" << ip.c_str() << ").";
+    pingLogger.log_message(strFormat.str(), true);
+    strFormat.str("");
 
-    printf("PING %s (%s).\n", host.c_str(), ip.c_str());
+
+
 
     // Будет выполняться пока пользователь не нажмет Ctrl + C.
     while (running) {
@@ -123,7 +140,12 @@ void Pinger::Ping() {
             mdev = sqrt(zhmih / recvPacketsCount);
 
             // Выводим информацию о последнем пинге.
-            printf("%ld bytes from %s: icmp_seq=%d time=%f ms\n", sizeof(buffer), ip.c_str(), pckt.hdr.un.echo.sequence, time);
+            strFormat << sizeof(buffer)<<" bytes from "<<ip.c_str()<<": icmp_seq="<<pckt.hdr.un.echo.sequence<<" time="<<time<<" ms";
+            pingLogger.log_message(strFormat.str(), true);
+            strFormat.str("");
+            
+
+
         }
     }
 
@@ -131,13 +153,23 @@ void Pinger::Ping() {
     double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;
 
     // Выводим статистику. 
-    printf("\n--- %s ping statistic ---\n", ip.c_str());
-    printf("%d sent, %d received, %.0f%% packet loss\n", sendPacketsCount, recvPacketsCount, packetLoss);
+    strFormat<<"--- "<<ip.c_str()<<" ping statistic ---";
+    pingLogger.log_message(strFormat.str(), true);
+    strFormat.str("");
+    strFormat<<sendPacketsCount<<" sent, "<<recvPacketsCount<<" received, "<<packetLoss<<" packet loss";
+    pingLogger.log_message(strFormat.str(), true);
+    strFormat.str("");
+
+
     
     // Если мы ничего не получили, то выводить статистику по времени нет смысла.
     if (recvPacketsCount != 0) {
-        printf("rtt min/avg/max/mdev = %f/%f/%f/%f ms\n", minPingTime, avgPingTime, maxPingTime, mdev);
+        strFormat<<"rtt min/avg/max/mdev = "<<minPingTime<<"/"<<avgPingTime<<"/"<<maxPingTime<<"/"<<mdev<<" ms";
+        pingLogger.log_message(strFormat.str(), true);
+        strFormat.str("");
+
     }
+    pingLogger.log_message("Ping is completed");
 }
 
 uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
