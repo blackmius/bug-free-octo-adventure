@@ -28,7 +28,7 @@ private:
     double avgPingTime;
     double preAvgPingTime;
     double mdev;
-    PingLogger pingLogger;
+    PingLogger *pingLogger;
     uint16_t calculateChecksum(uint16_t* buf, int32_t size);
 
 public:
@@ -36,7 +36,7 @@ public:
 
 public:
 
-    explicit Pinger(const char* host, PingLogger pingLogger);
+    explicit Pinger(const char* host, PingLogger *pingLogger);
 
     void Ping();
 };
