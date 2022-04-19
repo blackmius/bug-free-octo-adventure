@@ -9,7 +9,7 @@
 // Делаем глобальным чтобы иметь доступ в signal. С capture не приводится к обычной функции.
 std::unique_ptr<Pinger> pinger;
 int main(int argc, char** argv) {
-    PingLogger *pingLogger;
+    PingLogger *pingLogger = nullptr;
     // Два, потому что (1)./ping (2)www.google.com
     if (argc != 2 && argc != 3) {
         std::cerr << "Invalid arguments count.\n";
@@ -37,6 +37,8 @@ int main(int argc, char** argv) {
 
     // Пингуем.
     pinger->Ping();
+
+    delete pingLogger;
     
     return 0;
 }
