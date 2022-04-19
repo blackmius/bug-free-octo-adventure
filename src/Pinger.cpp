@@ -156,7 +156,7 @@ void Pinger::Ping() {
     strFormat<<"--- "<<ip.c_str()<<" ping statistic ---";
     pingLogger->log_message(strFormat.str(), true);
     strFormat.str("");
-    strFormat<<sendPacketsCount<<" sent, "<<recvPacketsCount<<" received, "<<packetLoss<<" packet loss";
+    strFormat<<sendPacketsCount<<" sent, "<<recvPacketsCount<<" received, "<<packetLoss<<"% packet loss";
     pingLogger->log_message(strFormat.str(), true);
     strFormat.str("");
 
