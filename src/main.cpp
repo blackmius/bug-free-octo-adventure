@@ -8,29 +8,35 @@
 
 // Делаем глобальным чтобы иметь доступ в signal. С capture не приводится к обычной функции.
 std::unique_ptr<Pinger> pinger;
+
 int main(int argc, char** argv) {
     PingLogger *pingLogger = nullptr;
-    // Два, потому что (1)./ping (2)www.google.com
+    
+    // Два или три, потому что (1)./ping (2)www.google.com (3)logfile.log.
     if (argc != 2 && argc != 3) {
         std::cerr << "Invalid arguments count.\n";
         return -1;
     }
 
+    // Если аргумента три, берем название лог-файла из третьего аргумента.
     if (argc == 3)
         pingLogger = new PingLogger(argv[2]);
+    // Иначе он получает стандартное название.
     else
         pingLogger = new PingLogger();
         
     pingLogger->log_message("Starting application",true);
+
     // Ловим исключение при создании объекта (неверное имя хоста или ошибка при создании сокета).
     try {
-            pinger = std::unique_ptr<Pinger>(new Pinger(argv[1], pingLogger));
+        pinger = std::unique_ptr<Pinger>(new Pinger(argv[1], pingLogger));
     }
     catch(const std::exception& e) {
         pingLogger->log_message(e.what(), true);
         return -1;
-    }    
-    // Делаем так, что при нажатии Ctrl + C меняется running.
+    }
+
+    // Обрабатываем Ctrl + С для завершения программы.
     signal(SIGINT, [](int sigint) {
         pinger->running = false;
     });
