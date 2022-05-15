@@ -10,9 +10,6 @@
 class Pinger {
 
 private:
-
-    static const int BUFSIZE = 64;
-
     // Информация о хосте предоставляемая пользователем.
     std::string host;
     std::string ip;
