@@ -73,8 +73,8 @@ void Pinger::Ping() {
     // Записываем в журнал событие о начале пинга
     pingLogger->log_message("Starting ping");
 
-    // Для формулы которую написал Даня (для расчета mdev), но она не очень правильная, на сайте немного по-другому.
-    // Я не знаю как ее назвать
+    // реккурентное стандартное отклонение
+    // http://www.scalaformachinelearning.com/2015/10/recursive-mean-and-standard-deviation.html
     double zhmih = 0;
 
     // Время отправки последнего пакета.
@@ -188,6 +188,16 @@ void Pinger::Ping() {
     pingLogger->log_message("Ping is completed");
 }
 
+/**
+ * @brief высчитать чек-сумму для буфера buf размера size
+ * 
+ * @param buf указатель на буфер
+ * @param size размер буфера
+ * @return uint16_t чек-сумма
+ * 
+ * Подробнее
+ * https://datatracker.ietf.org/doc/html/rfc1071
+ */
 uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
     int32_t nleft = size;
     int32_t sum = 0;
@@ -202,6 +212,7 @@ uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
         sum += *(uint8_t *)w;
     }
 
+    // у нас размер буфера всегда 36 байт это значит 0xFFFF * 18 максимум 1 переполнение
     sum = (sum >> 16) + (sum & 0xFFFF);
     sum += (sum >> 16);
 
