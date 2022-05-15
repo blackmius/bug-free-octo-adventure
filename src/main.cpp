@@ -17,14 +17,21 @@ int main(int argc, char** argv) {
         std::cerr << "Invalid arguments count.\n";
         return -1;
     }
-
-    // Если аргумента три, берем название лог-файла из третьего аргумента.
-    if (argc == 3)
-        pingLogger = new PingLogger(argv[2]);
-    // Иначе он получает стандартное название.
-    else
-        pingLogger = new PingLogger();
-        
+    // Ловим исключение при создании объекта журнала (неверное имя файла или недостаточно места для создания файла).
+    try {
+        // Если аргумента три, берем название лог-файла из третьего аргумента.
+        if (argc == 3)
+            pingLogger = new PingLogger(argv[2]);
+        // Иначе он получает стандартное название.
+        else
+            pingLogger = new PingLogger();
+    }
+    catch(const std::exception& e) {
+        std::cerr << e.what() << "\n";
+        return -1;
+    }
+    
+    // Записываем в журнал событие о начале работы приложения    
     pingLogger->log_message("Starting application",true);
 
     // Ловим исключение при создании объекта (неверное имя хоста или ошибка при создании сокета).
