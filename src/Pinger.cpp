@@ -17,22 +17,28 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host) {
 
     // Переводим имя хоста в ip. Желательно проверять на то, является ли _host изначально готовым ip, но необязательно.
     pingLogger = _logger;
+    // Записываем в журнал событие о начале создания обьекта 
     pingLogger->log_message("Pinger object initialization");
 
+    // Проверяем хост. Если что не так, выбрасываем исключение.
     const hostent* hostInfo = gethostbyname(_host);
     if (hostInfo == nullptr) {
         throw std::runtime_error("Ivalid host.");
     }
+    // Записываем в журнал событие о попытки утилиты получить ip адрес введенного хоста
     pingLogger->log_message("Pinger tries to get ip from address");
+
     in_addr addr;
     addr.s_addr = *(ulong*)hostInfo->h_addr_list[0];
 
     ip = inet_ntoa(addr);
+    // Записываем в журнал событие об успешном получении ip адреса
     strFormat << "Pinger got ip: " << ip.c_str() << "from address";
     pingLogger->log_message(strFormat.str());
     strFormat.str().resize(0);
+    
     timeout *= 10e8;
-
+    // Записываем в журнал событие о попытки создать сокет
     pingLogger->log_message("Pinger tries to create socket");
     // Готовим информацию, необходимую для создания сокета.
     sockAddr.sin_family = AF_INET;
@@ -45,6 +51,7 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host) {
         perror("");
         throw std::runtime_error("Socket creation failure");
     }
+    // Записываем в журнал событие об успешном создании сокета
     pingLogger->log_message("Socket was successfully created");
 
     // Инициализируем переменные статистики.
@@ -56,12 +63,14 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host) {
     avgPingTime = 0.0;
     preAvgPingTime = 0.0;
     mdev = 0.0;
+    // Записываем в журнал событие об успешной инициализации объекта Pinger
     pingLogger->log_message("Pinger object initialization complete");
 
 }
 
 void Pinger::Ping() {
     std::stringstream strFormat;
+    // Записываем в журнал событие о начале пинга
     pingLogger->log_message("Starting ping");
 
     // Для формулы которую написал Даня (для расчета mdev), но она не очень правильная, на сайте немного по-другому.
@@ -81,7 +90,6 @@ void Pinger::Ping() {
     // Необходимы для получения ответа.
     sockaddr recvAddr;
     uint recvAddrLen;
-
     strFormat << "PING " << host.c_str() << " (" << ip.c_str() << ").";
     pingLogger->log_message(strFormat.str(), true);
     strFormat.str("");
@@ -176,6 +184,7 @@ void Pinger::Ping() {
         strFormat.str("");
 
     }
+    // Записываем в журнал событие об успешном завершении работы утилиты
     pingLogger->log_message("Ping is completed");
 }
 
