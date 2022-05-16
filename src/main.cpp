@@ -12,29 +12,30 @@ std::unique_ptr<Pinger> pinger;
 int main(int argc, char** argv) {
     PingLogger *pingLogger = nullptr;
     
-    // Два или три, потому что (1)./ping (2)www.google.com (3)logfile.log.
-    if (argc != 2 && argc != 3) {
-        std::cerr << "Invalid arguments count.\n";
-        return -1;
-    }
-    // Ловим исключение при создании объекта журнала (неверное имя файла или недостаточно места для создания файла).
+    // Обрабатываем исключения, возникшие в результате валидации аргуметов и создания логера.
+    // Пока логер не создан, можем выводить ошибки в стандатный поток вывода ошибок.
     try {
+
+        Pinger::ValidateArgs(argc);
+
         // Если аргумента три, берем название лог-файла из третьего аргумента.
         if (argc == 3)
             pingLogger = new PingLogger(argv[2]);
         // Иначе он получает стандартное название.
         else
             pingLogger = new PingLogger();
+
     }
-    catch(const std::exception& e) {
+    catch(const std::runtime_error& e) {
         std::cerr << e.what() << "\n";
         return -1;
     }
     
     // Записываем в журнал событие о начале работы приложения    
-    pingLogger->log_message("Starting application",true);
+    pingLogger->log_message("Starting application");
 
     // Ловим исключение при создании объекта (неверное имя хоста или ошибка при создании сокета).
+    // Уже для вывода ошибок используется логер.
     try {
         pinger = std::unique_ptr<Pinger>(new Pinger(argv[1], pingLogger));
     }
@@ -52,6 +53,6 @@ int main(int argc, char** argv) {
     pinger->Ping();
 
     delete pingLogger;
-    
+
     return 0;
 }

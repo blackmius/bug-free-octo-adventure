@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstring>
 #include <sstream>
+#include <tuple>
 
 using namespace std::chrono;
 
@@ -63,141 +64,47 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
     avgPingTime = 0.0;
     preAvgPingTime = 0.0;
     mdev = 0.0;
+    zhmih = 0.0;
+
     // Записываем в журнал событие об успешной инициализации объекта Pinger
     pingLogger->log_message("Pinger object initialization complete");
 
 }
 
 void Pinger::Ping() {
-    std::stringstream strFormat;
     // Записываем в журнал событие о начале пинга
     pingLogger->log_message("Starting ping");
 
-    // реккурентное стандартное отклонение
-    // http://www.scalaformachinelearning.com/2015/10/recursive-mean-and-standard-deviation.html
-    double zhmih = 0;
-
-    // Время отправки последнего пакета.
-    int64_t lastPacketSendTime = 0;
-
-    // Время, в течение которого ожидаем ответа.
-    struct timeval tv { 0, 10000 };
-
-    // Переменные, которые нужны для получения ответа.
-    // 20 байт - ip-пакет + 16 байт - icmp-пакет
-    unsigned char buffer[36] = "";
-
-    // Необходимы для получения ответа.
-    sockaddr recvAddr;
-    uint recvAddrLen;
+    std::stringstream strFormat;
     strFormat << "PING " << host.c_str() << " (" << ip.c_str() << ").";
     pingLogger->log_message(strFormat.str(), true);
     strFormat.str("");
 
+    // Время отправки последнего пакета.
+    int64_t lastPacketSendTime = 0;
+
+
     // Будет выполняться пока пользователь не нажмет Ctrl + C.
     while (running) {
-        // Фиксируем текущее время.
-        int64_t now = high_resolution_clock::now().time_since_epoch().count();
+        // Пробуем отправить пакет.
+        sendPackage(&lastPacketSendTime);
 
-        // Если прошло timeout времени с последней отправки пакета, отправляем новый пакет.
-        if (now - lastPacketSendTime >= timeout) {
-            // Заполняем пакет.
-            Packet pckt;
-            memset(&pckt, 0, sizeof(pckt));
-            pckt.hdr.type = 8;
-            pckt.hdr.un.echo.sequence = sendPacketsCount + 1;
-            pckt.data = now;
-            pckt.hdr.checksum = calculateChecksum((uint16_t*)&pckt, sizeof pckt);
+        // Буфер в который записывается ответ.
+        // 20 байт - ip-пакет + 16 байт - icmp-пакет.
+        unsigned char buffer[36] = "";
 
-            // Отправляем пакет и проверяем результат.
-            int sendResult = sendto(socket, &pckt, sizeof(pckt), 0, (sockaddr*)&sockAddr, sizeof(sockAddr));
-            if (sendResult) {
-                sendPacketsCount++;
-                lastPacketSendTime = now;
-            }
-        }
-
-        // Получаем ответ и проверяем результат.
-        fd_set fd;
-        FD_ZERO(&fd);
-        FD_SET(socket, &fd);
-        int n = select(socket+1, &fd, 0, 0, &tv);
-        if (n <= 0) {
-            continue;
-        }
-
-        int recvResult = recvfrom(socket, buffer, sizeof(buffer), 0, &recvAddr, &recvAddrLen);
-        if (recvResult) {
-            // Фиксируем время получения пакета.
-            now = high_resolution_clock::now().time_since_epoch().count();
-
-            // Преобразуем байты в структуру пакета.
-            Packet pckt;
-            pckt = *(Packet*)&buffer[20]; // 20 байт - размер ip-пакета
-            
-            // Считаем, сколько шел пакет.
-            double time = double(now - pckt.data) * 1e-6;
-
-            recvPacketsCount++;
-
-            // Ищем наименьшее время.
-            if (time < minPingTime || minPingTime == -1) {
-                minPingTime = time;
-            }
-            
-            // Ищем наибольшее время
-            if (time > maxPingTime) {
-                maxPingTime = time;
-            }
-
-            // Считаем среднее время пинга на данный момент.
-            preAvgPingTime = avgPingTime;
-            avgPingTime = (1 - 1.0 / recvPacketsCount) * avgPingTime + time / recvPacketsCount;
-            
-            // Считаем среднее отклонение на данный момент.
-            zhmih = zhmih + (time - avgPingTime) * (time - preAvgPingTime); 
-            mdev = sqrt(zhmih / recvPacketsCount);
-
-            // Выводим информацию о последнем пинге.
-            strFormat << sizeof(buffer)<<" bytes from "<<ip.c_str()<<": icmp_seq="<<pckt.hdr.un.echo.sequence<<" time="<<time<<" ms";
-            pingLogger->log_message(strFormat.str(), true);
-            strFormat.str("");
+        if (recvPackage(buffer, sizeof(buffer))) {
+            updateStatistic(buffer, sizeof(buffer));
         }
     }
     // Отправка пакетов завершена.
 
-    // Считаем потери пакетов.
-    double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;
+    outputStatistic();
 
-    // Выводим статистику. 
-    strFormat<<"--- "<<ip.c_str()<<" ping statistic ---";
-    pingLogger->log_message(strFormat.str(), true);
-    strFormat.str("");
-    strFormat<<sendPacketsCount<<" sent, "<<recvPacketsCount<<" received, "<<packetLoss<<"% packet loss";
-    pingLogger->log_message(strFormat.str(), true);
-    strFormat.str("");
-    
-    // Если мы ничего не получили, то выводить статистику по времени нет смысла.
-    if (recvPacketsCount != 0) {
-        strFormat<<"rtt min/avg/max/mdev = "<<minPingTime<<"/"<<avgPingTime<<"/"<<maxPingTime<<"/"<<mdev<<" ms";
-        pingLogger->log_message(strFormat.str(), true);
-        strFormat.str("");
-
-    }
     // Записываем в журнал событие об успешном завершении работы утилиты
     pingLogger->log_message("Ping is completed");
 }
 
-/**
- * @brief высчитать чек-сумму для буфера buf размера size
- * 
- * @param buf указатель на буфер
- * @param size размер буфера
- * @return uint16_t чек-сумма
- * 
- * Подробнее
- * https://datatracker.ietf.org/doc/html/rfc1071
- */
 uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
     int32_t nleft = size;
     int32_t sum = 0;
@@ -219,4 +126,115 @@ uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
     uint32_t checksum = ~sum;
 
     return checksum;
+}
+
+void Pinger::ValidateArgs(int argc) {
+    // Два или три, потому что (1)./ping (2)www.google.com (3)logfile.log.
+    if (argc != 2 && argc != 3) {
+        std::string error = "Invalid arguments count.";
+        std::cerr << error << '\n';
+        throw std::runtime_error(error);
+    }
+}
+
+void Pinger::sendPackage(int64_t *lastPacketSendTime) {
+    // Фиксируем текущее время.
+    int64_t now = high_resolution_clock::now().time_since_epoch().count();
+    
+    if (now - *lastPacketSendTime >= timeout) {
+    // Заполняем пакет.
+        Packet pckt;
+        memset(&pckt, 0, sizeof(pckt));
+        pckt.hdr.type = 8;
+        pckt.hdr.un.echo.sequence = sendPacketsCount + 1;
+        pckt.data = now;
+        pckt.hdr.checksum = calculateChecksum((uint16_t*)&pckt, sizeof pckt);
+
+        // Отправляем пакет и проверяем результат.
+        int sendResult = sendto(socket, &pckt, sizeof(pckt), 0, (sockaddr*)&sockAddr, sizeof(sockAddr));
+        if (sendResult) {
+            sendPacketsCount++;
+            *lastPacketSendTime = now;
+        }
+    }
+}
+
+bool Pinger::recvPackage(unsigned char *buffer, size_t bufferSize) {
+    // Время, в течение которого ожидаем ответа.
+    struct timeval tv { 0, 10000 };
+
+    // Ждем пока в сокете что-нибудь появится.
+    fd_set fd;
+    FD_ZERO(&fd);
+    FD_SET(socket, &fd);
+    int n = select(socket+1, &fd, 0, 0, &tv);
+    if (n <= 0) {
+        return false;
+    }
+
+    // Необходимы для получения ответа.
+    sockaddr recvAddr;
+    uint recvAddrLen;
+
+    int recvResult = recvfrom(socket, buffer, bufferSize, 0, &recvAddr, &recvAddrLen);
+    
+    return recvResult;
+}
+
+void Pinger::updateStatistic(unsigned char *buffer, size_t bufferSize) {
+    // Фиксируем время получения пакета.
+    int64_t now = high_resolution_clock::now().time_since_epoch().count();
+
+    // Преобразуем байты в структуру пакета.
+    Packet pckt;
+    pckt = *(Packet*)&buffer[20]; // 20 байт - размер ip-пакета
+    
+    // Считаем, сколько шел пакет.
+    double time = double(now - pckt.data) * 1e-6;
+
+    recvPacketsCount++;
+
+    // Ищем наименьшее время.
+    if (time < minPingTime || minPingTime == -1) {
+        minPingTime = time;
+    }
+    
+    // Ищем наибольшее время
+    if (time > maxPingTime) {
+        maxPingTime = time;
+    }
+
+    // Считаем среднее время пинга на данный момент.
+    preAvgPingTime = avgPingTime;
+    avgPingTime = (1 - 1.0 / recvPacketsCount) * avgPingTime + time / recvPacketsCount;
+    
+    // Считаем среднее отклонение на данный момент.
+    zhmih = zhmih + (time - avgPingTime) * (time - preAvgPingTime); 
+    mdev = sqrt(zhmih / recvPacketsCount);
+
+    // Выводим информацию о последнем пинге.
+    std::stringstream strFormat;
+    strFormat << bufferSize <<" bytes from "<<ip.c_str()<<": icmp_seq="<<pckt.hdr.un.echo.sequence<<" time="<<time<<" ms";
+    pingLogger->log_message(strFormat.str(), true);
+}
+
+void Pinger::outputStatistic() {
+    // Считаем потери пакетов.
+    double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;
+
+    // Выводим статистику. 
+    std::stringstream strFormat;
+    strFormat<<"\n--- "<<ip.c_str()<<" ping statistic ---";
+    pingLogger->log_message(strFormat.str(), true);
+    strFormat.str("");
+
+    strFormat<<sendPacketsCount<<" sent, "<<recvPacketsCount<<" received, "<<packetLoss<<"% packet loss";
+    pingLogger->log_message(strFormat.str(), true);
+    strFormat.str("");
+    
+    // Если мы ничего не получили, то выводить статистику по времени нет смысла.
+    if (recvPacketsCount != 0) {
+        strFormat<<"rtt min/avg/max/mdev = "<<minPingTime<<"/"<<avgPingTime<<"/"<<maxPingTime<<"/"<<mdev<<" ms";
+        pingLogger->log_message(strFormat.str(), true);
+    }
 }

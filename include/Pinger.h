@@ -32,6 +32,10 @@ private:
     double preAvgPingTime;
     double mdev;
 
+    // реккурентное стандартное отклонение
+    // http://www.scalaformachinelearning.com/2015/10/recursive-mean-and-standard-deviation.html
+    double zhmih;
+
     // Логгер.
     PingLogger *pingLogger;
 
@@ -40,16 +44,21 @@ private:
      * @param buf Указатель на начало пакета.
      * @param size Размер пакета.
      * @return uint16_t - Чек-сумма.
+     * 
+     * Подробнее
+     * https://datatracker.ietf.org/doc/html/rfc1071
+     * 
      */
     uint16_t calculateChecksum(uint16_t* buf, int32_t size);
 
-    // Разделить код Ping на эти функции(примерно) для беленькой)))
-    void sendPackage();
-    bool recvPackage();
-    void updateStatistic(int64_t time);
+    // Добавить комментарии.
+    void sendPackage(int64_t *lastPacketSendTime);
+    bool recvPackage(unsigned char *buffer, size_t bufferSize);
+    void updateStatistic(unsigned char *buffer, size_t bufferSize);
     void outputStatistic();
 
 public:
+
     // Определяет, должен ли продолжать работу Pinger.
     bool running = true;
 
@@ -68,6 +77,6 @@ public:
      */
     void Ping();
 
-    // Реализовать))
-    static void ValidateArgs(int argc, char ** argv);
+    
+    static void ValidateArgs(int argc);
 };
