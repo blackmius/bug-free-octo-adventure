@@ -67,4 +67,7 @@ public:
      * @brief Выполняет функционал ping'a.
      */
     void Ping();
+
+    // Реализовать))
+    static void ValidateArgs(int argc, char ** argv);
 };
