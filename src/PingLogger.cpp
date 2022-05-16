@@ -1,4 +1,6 @@
 #include "PingLogger.h"
+#include "Exceptions.h"
+
 #include <stdio.h>
 #include <string>
 #include <fstream>
@@ -14,7 +16,7 @@ PingLogger::PingLogger(const char* path){
   fd = fopen (path,"a");
   //Проверяем удалось ли утилите открыть или создать лог-файл
   if (!fd) {
-        throw std::runtime_error("Ivalid log-file name.");
+        throw BeforeLogError("Can't open or create log file.");
   }
 };
 
@@ -38,4 +40,15 @@ std::string PingLogger::time_now(){
   //Преобразования системного времени из структурного типа в строку
   strftime(s1, 80, "%d.%m.%Y %H:%M:%S ", u);
   return s1;
+}
+
+PingLogger* PingLogger::CreateLogger(int argc, char **argv) {
+  if (argc == 3)
+  {
+    return new PingLogger(argv[2]);
+  }
+  else
+  {
+    return new PingLogger();
+  }
 }

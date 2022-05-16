@@ -1,5 +1,6 @@
 #include "Pinger.h"
 #include "PingLogger.h"
+#include "Exceptions.h"
 
 #include <iostream>
 #include <arpa/inet.h>
@@ -23,7 +24,7 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
     const hostent* hostInfo = gethostbyname(_host);
     // Проверяем хост. Если что не так, выбрасываем исключение.
     if (hostInfo == nullptr) {
-        throw std::runtime_error("Ivalid host.");
+        throw AfterLogError("Ivalid host.");
     }
     // Записываем в журнал событие о попытки утилиты получить ip адрес введенного хоста
     pingLogger->log_message("Pinger tries to get ip from address");
@@ -50,7 +51,7 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
     socket = ::socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socket <= 0) {
         perror("");
-        throw std::runtime_error("Socket creation failure");
+        throw AfterLogError("Socket creation failure");
     }
     // Записываем в журнал событие об успешном создании сокета
     pingLogger->log_message("Socket was successfully created");
@@ -131,7 +132,7 @@ uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
 void Pinger::ValidateArgs(int argc) {
     // Два или три, потому что (1)./ping (2)www.google.com (3)logfile.log.
     if (argc != 2 && argc != 3) {
-        throw std::runtime_error("Invalid arguments count.");
+        throw BeforeLogError("Invalid arguments count.");
     }
 }
 

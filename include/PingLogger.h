@@ -39,4 +39,6 @@ public:
    *             попадали в журнал
    */
   void log_message(std::string message, bool show = false);
+
+  static PingLogger* CreateLogger(int argc, char **argv);
 };
