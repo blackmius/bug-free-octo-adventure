@@ -131,9 +131,7 @@ uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
 void Pinger::ValidateArgs(int argc) {
     // Два или три, потому что (1)./ping (2)www.google.com (3)logfile.log.
     if (argc != 2 && argc != 3) {
-        std::string error = "Invalid arguments count.";
-        std::cerr << error << '\n';
-        throw std::runtime_error(error);
+        throw std::runtime_error("Invalid arguments count.");
     }
 }
 
