@@ -8,7 +8,7 @@
 // Делаем глобальным чтобы иметь доступ в signal. С capture не приводится к обычной функции.
 std::unique_ptr<Pinger> pinger;
 
-// 
+// Тело программы
 int main(int argc, char** argv)
 {
     PingLogger *pingLogger = nullptr;
