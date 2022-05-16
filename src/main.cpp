@@ -1,13 +1,14 @@
-#include "Pinger.h"
-#include "PingLogger.h"
-#include "Exceptions.h"
+#include "Pinger.h" // Pinger
+#include "PingLogger.h" // PingLogger
+#include "Exceptions.h" // BeforeLogError, AfterLogError
 
-#include <signal.h>
-#include <memory>
+#include <signal.h> // signal(), SIGINT
+#include <memory> // std::unique_ptr
 
 // Делаем глобальным чтобы иметь доступ в signal. С capture не приводится к обычной функции.
 std::unique_ptr<Pinger> pinger;
 
+// 
 int main(int argc, char** argv) {
     PingLogger *pingLogger = nullptr;
     

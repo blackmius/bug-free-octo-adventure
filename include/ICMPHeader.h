@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
-#include <netinet/ip_icmp.h>
+#include <cstdint> // uint64_t
+#include <netinet/ip_icmp.h> // icmphdr
 
 // Тип представляющий ICMP пакет.
 struct Packet {

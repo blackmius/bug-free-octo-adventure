@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <time.h>
+#include <string> // std::string
+#include <fstream> // FILE, fopen(), fprintf(), fclose()
+#include <time.h> // strftime(), localtime(), tm
+#include <iostream> // printf()
 
 /**
  * @brief Журнал

@@ -2,16 +2,17 @@
 #include "PingLogger.h"
 #include "Exceptions.h"
 
-#include <arpa/inet.h>
-#include <chrono>
-#include <unistd.h>
-#include <cmath>
-#include <cstring>
-#include <sstream>
+#include <arpa/inet.h> // inet_ntoa()
+#include <chrono> // std::chrono::high_resolution_clock
+#include <unistd.h> // int64_t, uint16_t, int32_t
+#include <cmath> // sqrt()
+#include <cstring> // memset()
+#include <sstream> // std::stringstream
 
 using namespace std::chrono;
 
 Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger(_logger) {
+    // Для фомирования отформатированной строки.
     std::stringstream strFormat;
 
     // Записываем в журнал событие о начале создания обьекта 
@@ -97,6 +98,7 @@ void Pinger::Ping() {
     }
     // Отправка пакетов завершена.
 
+    // Выводим статистику.
     outputStatistic();
 
     // Записываем в журнал событие об успешном завершении работы утилиты
