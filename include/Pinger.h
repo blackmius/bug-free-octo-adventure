@@ -43,6 +43,12 @@ private:
      */
     uint16_t calculateChecksum(uint16_t* buf, int32_t size);
 
+    // Разделить код Ping на эти функции(примерно) для беленькой)))
+    void sendPackage();
+    bool recvPackage();
+    void updateStatistic(int64_t time);
+    void outputStatistic();
+
 public:
     // Определяет, должен ли продолжать работу Pinger.
     bool running = true;
