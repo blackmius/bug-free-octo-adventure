@@ -1,13 +1,14 @@
-#include <string>
-#include <sys/socket.h>
-#include <netdb.h>
+#pragma once
+
+#include <string> // std::string
+#include <netdb.h> // hostent, gethostbyname(), sockaddr_in
+
 #include "PingLogger.h"
-
-
 #include "ICMPHeader.h"
 
 // Тип реализующий функционал ping'a.
-class Pinger {
+class Pinger
+{
 
 private:
     // Информация о хосте предоставляемая пользователем.
@@ -32,6 +33,10 @@ private:
     double preAvgPingTime;
     double mdev;
 
+    // реккурентное стандартное отклонение
+    // http://www.scalaformachinelearning.com/2015/10/recursive-mean-and-standard-deviation.html
+    double zhmih;
+
     // Логгер.
     PingLogger *pingLogger;
 
@@ -39,18 +44,55 @@ private:
      * @brief Функция для расчета чек-суммы пакета.
      * @param buf Указатель на начало пакета.
      * @param size Размер пакета.
-     * @return uint16_t - Чек-сумма.
+     * @return uint16_t Чек-сумма.
+     * 
+     * Подробнее
+     * https://datatracker.ietf.org/doc/html/rfc1071
+     * 
      */
     uint16_t calculateChecksum(uint16_t* buf, int32_t size);
 
+    // Добавить комментарии.
+
+    /**
+     * @brief Выполняет отправку пакета.  
+     * 
+     * @param lastPacketSendTime указатель на переменную, хранящую время отправки последнего пакета.
+     */
+    void sendPackage(int64_t *lastPacketSendTime);
+
+    /**
+     * @brief Выполняет получение пакета.
+     * 
+     * @param buffer указатель на буфер получаемого пакета.
+     * @param bufferSize размер буфера получаемого пакета.
+     * @return true если получение успешно.
+     * @return false если получение провалено.
+     */
+    bool recvPackage(unsigned char *buffer, size_t bufferSize);
+
+    /**
+     * @brief Обновляет статистику и выводит ифнормацию о последнем полученном пакете.
+     * 
+     * @param buffer указатель на буфер полученого пакета. 
+     * @param bufferSize размер буфера полученного пакета.
+     */
+    void updateStatistic(unsigned char *buffer, size_t bufferSize);
+
+    /**
+     * @brief Выводит финальную статистику работы пинга.
+     */
+    void outputStatistic();
+
 public:
+
     // Определяет, должен ли продолжать работу Pinger.
     bool running = true;
 
 public:
 
     /**
-     * @brief Construct a new Pinger object
+     * @brief Создает новый экземпляр Pinger
      * 
      * @param host IPv4 или домен хоста.
      * @param pingLogger Указатель на логгер.
@@ -61,4 +103,11 @@ public:
      * @brief Выполняет функционал ping'a.
      */
     void Ping();
+
+    /**
+     * @brief Выполняет валидацию переданных аргументов. 
+     * 
+     * @param argc количество переданных аргументов. 
+     */
+    static void ValidateArgs(int argc);
 };

@@ -1,26 +1,27 @@
 #include "PingLogger.h"
-#include <stdio.h>
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <time.h>
+#include "Exceptions.h"
 
-PingLogger::~PingLogger(){
+PingLogger::~PingLogger()
+{
   //Закрывает лог-файл
   fclose(fd);
 }
 
-PingLogger::PingLogger(const char* path){
+PingLogger::PingLogger(const char* path)
+{
   fd = fopen (path,"a");
   //Проверяем удалось ли утилите открыть или создать лог-файл
-  if (!fd) {
-        throw std::runtime_error("Ivalid log-file name.");
+  if (!fd)
+  {
+        throw BeforeLogError("Can't open or create log file.");
   }
 };
 
-void PingLogger::log_message(std::string message, bool show){
+void PingLogger::log_message(std::string message, bool show)
+{
   //Проверяем нужно ли вывести событие в терминале
-  if(show){
+  if(show)
+  {
     //Вывод события в терминале
     printf("%s \n", message.c_str());
   }
@@ -28,7 +29,8 @@ void PingLogger::log_message(std::string message, bool show){
   fprintf(fd, "%s - %s \n", time_now().c_str(), message.c_str());
 }
 
-std::string PingLogger::time_now(){
+std::string PingLogger::time_now()
+{
   //Структура для получения системного времени
   struct tm *u;
   //Строка для того, чтобы сохранить в ней системное время
@@ -38,4 +40,16 @@ std::string PingLogger::time_now(){
   //Преобразования системного времени из структурного типа в строку
   strftime(s1, 80, "%d.%m.%Y %H:%M:%S ", u);
   return s1;
+}
+
+PingLogger* PingLogger::CreateLogger(int argc, char **argv)
+{
+  if (argc == 3)
+  {
+    return new PingLogger(argv[2]);
+  }
+  else
+  {
+    return new PingLogger();
+  }
 }

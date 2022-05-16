@@ -1,8 +1,10 @@
 #pragma once
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <time.h>
+
+#include <string> // std::string
+#include <fstream> // FILE, fopen(), fprintf(), fclose()
+#include <time.h> // strftime(), localtime(), tm
+#include <iostream> // printf()
+
 /**
  * @brief Журнал
  * 
@@ -10,12 +12,13 @@
  * Для полноты лога весь вывод в stdout лучше делать через журнал,
  * указывая параметр show=true в log_message
  */
-class PingLogger {
+class PingLogger
+{
 private:
   FILE * fd; // дескриптор журнала
 public:
   /**
-   * @brief Construct a new PingLogger object
+   * @brief Создает новый экземпляр PingLogger
    * 
    * @param path Назвагие лог-файла. (Значение по умолчанию - log.txt)
    */
@@ -39,4 +42,6 @@ public:
    *             попадали в журнал
    */
   void log_message(std::string message, bool show = false);
+
+  static PingLogger* CreateLogger(int argc, char **argv);
 };
