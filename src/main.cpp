@@ -2,8 +2,6 @@
 #include "PingLogger.h"
 #include "Exceptions.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <signal.h>
 #include <memory>
 
