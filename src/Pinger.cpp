@@ -12,16 +12,15 @@
 
 using namespace std::chrono;
 
-Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host) {
+Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger(_logger) {
     std::stringstream strFormat;
 
-    // Переводим имя хоста в ip. Желательно проверять на то, является ли _host изначально готовым ip, но необязательно.
-    pingLogger = _logger;
     // Записываем в журнал событие о начале создания обьекта 
     pingLogger->log_message("Pinger object initialization");
 
-    // Проверяем хост. Если что не так, выбрасываем исключение.
+    // Переводим имя хоста в ip.
     const hostent* hostInfo = gethostbyname(_host);
+    // Проверяем хост. Если что не так, выбрасываем исключение.
     if (hostInfo == nullptr) {
         throw std::runtime_error("Ivalid host.");
     }
@@ -38,6 +37,7 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host) {
     strFormat.str().resize(0);
     
     timeout *= 10e8;
+
     // Записываем в журнал событие о попытки создать сокет
     pingLogger->log_message("Pinger tries to create socket");
     // Готовим информацию, необходимую для создания сокета.

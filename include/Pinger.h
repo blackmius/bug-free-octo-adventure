@@ -50,7 +50,7 @@ public:
 public:
 
     /**
-     * @brief Construct a new Pinger object
+     * @brief Создает новый экземпляр Pinger
      * 
      * @param host IPv4 или домен хоста.
      * @param pingLogger Указатель на логгер.

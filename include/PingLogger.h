@@ -15,7 +15,7 @@ private:
   FILE * fd; // дескриптор журнала
 public:
   /**
-   * @brief Construct a new PingLogger object
+   * @brief Создает новый экземпляр PingLogger
    * 
    * @param path Назвагие лог-файла. (Значение по умолчанию - log.txt)
    */
