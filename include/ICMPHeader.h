@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <netinet/ip_icmp.h>
 

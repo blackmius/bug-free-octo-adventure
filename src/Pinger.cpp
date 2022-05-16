@@ -2,15 +2,12 @@
 #include "PingLogger.h"
 #include "Exceptions.h"
 
-#include <iostream>
 #include <arpa/inet.h>
 #include <chrono>
 #include <unistd.h>
-#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <sstream>
-#include <tuple>
 
 using namespace std::chrono;
 

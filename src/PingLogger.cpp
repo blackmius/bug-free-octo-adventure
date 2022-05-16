@@ -1,12 +1,6 @@
 #include "PingLogger.h"
 #include "Exceptions.h"
 
-#include <stdio.h>
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <time.h>
-
 PingLogger::~PingLogger(){
   //Закрывает лог-файл
   fclose(fd);

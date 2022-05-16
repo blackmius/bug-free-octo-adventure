@@ -1,9 +1,10 @@
+#pragma once
+
 #include <string>
 #include <sys/socket.h>
 #include <netdb.h>
+
 #include "PingLogger.h"
-
-
 #include "ICMPHeader.h"
 
 // Тип реализующий функционал ping'a.

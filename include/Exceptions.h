@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdexcept>
 
 class BeforeLogError : public std::runtime_error {
