@@ -11,7 +11,8 @@
 
 using namespace std::chrono;
 
-Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger(_logger) {
+Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger(_logger)
+{
     // Для фомирования отформатированной строки.
     std::stringstream strFormat;
 
@@ -21,7 +22,8 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
     // Переводим имя хоста в ip.
     const hostent* hostInfo = gethostbyname(_host);
     // Проверяем хост. Если что не так, выбрасываем исключение.
-    if (hostInfo == nullptr) {
+    if (hostInfo == nullptr)
+    {
         throw AfterLogError("Ivalid host.");
     }
     // Записываем в журнал событие о попытки утилиты получить ip адрес введенного хоста
@@ -34,7 +36,7 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
     // Записываем в журнал событие об успешном получении ip адреса
     strFormat << "Pinger got ip: " << ip.c_str() << "from address";
     pingLogger->log_message(strFormat.str());
-    strFormat.str().resize(0);
+    strFormat.str().resize(0); //Очищаем форматированную строку
     
     timeout *= 10e8;
 
@@ -47,7 +49,8 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
 
     // Создаем сокет. Если что не так, выбрасываем исключение.
     socket = ::socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-    if (socket <= 0) {
+    if (socket <= 0)
+    {
         perror("");
         throw AfterLogError("Socket creation failure");
     }
@@ -70,7 +73,8 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
 
 }
 
-void Pinger::Ping() {
+void Pinger::Ping()
+{
     // Записываем в журнал событие о начале пинга
     pingLogger->log_message("Starting ping");
 
@@ -84,7 +88,8 @@ void Pinger::Ping() {
 
 
     // Будет выполняться пока пользователь не нажмет Ctrl + C.
-    while (running) {
+    while (running)
+    {
         // Пробуем отправить пакет.
         sendPackage(&lastPacketSendTime);
 
@@ -92,7 +97,8 @@ void Pinger::Ping() {
         // 20 байт - ip-пакет + 16 байт - icmp-пакет.
         unsigned char buffer[36] = "";
 
-        if (recvPackage(buffer, sizeof(buffer))) {
+        if (recvPackage(buffer, sizeof(buffer)))
+        {
             updateStatistic(buffer, sizeof(buffer));
         }
     }
@@ -105,17 +111,20 @@ void Pinger::Ping() {
     pingLogger->log_message("Ping is completed");
 }
 
-uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
+uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size)
+{
     int32_t nleft = size;
     int32_t sum = 0;
     uint16_t *w = buf;
 
-    while (nleft > 1) {
+    while (nleft > 1)
+    {
         sum += *w++;
         nleft -= 2;
     }
 
-    if (nleft == 1) {
+    if (nleft == 1)
+    {
         sum += *(uint8_t *)w;
     }
 
@@ -128,9 +137,11 @@ uint16_t Pinger::calculateChecksum(uint16_t *buf, int32_t size) {
     return checksum;
 }
 
-void Pinger::ValidateArgs(int argc) {
+void Pinger::ValidateArgs(int argc)
+{
     // Два или три, потому что (1)./ping (2)www.google.com (3)logfile.log.
-    if (argc != 2 && argc != 3) {
+    if (argc != 2 && argc != 3)
+    {
         throw BeforeLogError("Invalid arguments count.");
     }
 }
@@ -139,7 +150,8 @@ void Pinger::sendPackage(int64_t *lastPacketSendTime) {
     // Фиксируем текущее время.
     int64_t now = high_resolution_clock::now().time_since_epoch().count();
     
-    if (now - *lastPacketSendTime >= timeout) {
+    if (now - *lastPacketSendTime >= timeout)
+    {
     // Заполняем пакет.
         Packet pckt;
         memset(&pckt, 0, sizeof(pckt));
@@ -150,14 +162,16 @@ void Pinger::sendPackage(int64_t *lastPacketSendTime) {
 
         // Отправляем пакет и проверяем результат.
         int sendResult = sendto(socket, &pckt, sizeof(pckt), 0, (sockaddr*)&sockAddr, sizeof(sockAddr));
-        if (sendResult) {
+        if (sendResult)
+        {
             sendPacketsCount++;
             *lastPacketSendTime = now;
         }
     }
 }
 
-bool Pinger::recvPackage(unsigned char *buffer, size_t bufferSize) {
+bool Pinger::recvPackage(unsigned char *buffer, size_t bufferSize)
+{
     // Время, в течение которого ожидаем ответа.
     struct timeval tv { 0, 10000 };
 
@@ -166,7 +180,8 @@ bool Pinger::recvPackage(unsigned char *buffer, size_t bufferSize) {
     FD_ZERO(&fd);
     FD_SET(socket, &fd);
     int n = select(socket+1, &fd, 0, 0, &tv);
-    if (n <= 0) {
+    if (n <= 0)
+    {
         return false;
     }
 
@@ -179,7 +194,8 @@ bool Pinger::recvPackage(unsigned char *buffer, size_t bufferSize) {
     return recvResult;
 }
 
-void Pinger::updateStatistic(unsigned char *buffer, size_t bufferSize) {
+void Pinger::updateStatistic(unsigned char *buffer, size_t bufferSize)
+{
     // Фиксируем время получения пакета.
     int64_t now = high_resolution_clock::now().time_since_epoch().count();
 
@@ -193,12 +209,14 @@ void Pinger::updateStatistic(unsigned char *buffer, size_t bufferSize) {
     recvPacketsCount++;
 
     // Ищем наименьшее время.
-    if (time < minPingTime || minPingTime == -1) {
+    if (time < minPingTime || minPingTime == -1)
+    {
         minPingTime = time;
     }
     
     // Ищем наибольшее время
-    if (time > maxPingTime) {
+    if (time > maxPingTime)
+    {
         maxPingTime = time;
     }
 
@@ -216,7 +234,8 @@ void Pinger::updateStatistic(unsigned char *buffer, size_t bufferSize) {
     pingLogger->log_message(strFormat.str(), true);
 }
 
-void Pinger::outputStatistic() {
+void Pinger::outputStatistic()
+{
     // Считаем потери пакетов.
     double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;
 
@@ -231,7 +250,8 @@ void Pinger::outputStatistic() {
     strFormat.str("");
     
     // Если мы ничего не получили, то выводить статистику по времени нет смысла.
-    if (recvPacketsCount != 0) {
+    if (recvPacketsCount != 0)
+    {
         strFormat<<"rtt min/avg/max/mdev = "<<minPingTime<<"/"<<avgPingTime<<"/"<<maxPingTime<<"/"<<mdev<<" ms";
         pingLogger->log_message(strFormat.str(), true);
     }

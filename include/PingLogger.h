@@ -12,7 +12,8 @@
  * Для полноты лога весь вывод в stdout лучше делать через журнал,
  * указывая параметр show=true в log_message
  */
-class PingLogger {
+class PingLogger
+{
 private:
   FILE * fd; // дескриптор журнала
 public:

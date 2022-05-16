@@ -7,7 +7,8 @@
 #include "ICMPHeader.h"
 
 // Тип реализующий функционал ping'a.
-class Pinger {
+class Pinger
+{
 
 private:
     // Информация о хосте предоставляемая пользователем.
@@ -56,7 +57,7 @@ private:
     /**
      * @brief Выполняет отправку пакета.  
      * 
-     * @param lastPacketSendTime - указатель на переменную, хранящую время отправки последнего пакета.
+     * @param lastPacketSendTime указатель на переменную, хранящую время отправки последнего пакета.
      */
     void sendPackage(int64_t *lastPacketSendTime);
 

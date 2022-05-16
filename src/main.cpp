@@ -9,7 +9,8 @@
 std::unique_ptr<Pinger> pinger;
 
 // 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     PingLogger *pingLogger = nullptr;
     
     // Обрабатываем исключения, возникшие в результате работы программы.
@@ -28,17 +29,20 @@ int main(int argc, char** argv) {
         // Создаем объект Pinger.
         pinger = std::unique_ptr<Pinger>(new Pinger(argv[1], pingLogger));
     }
-    catch(const BeforeLogError& e) {
+    catch(const BeforeLogError& e)
+    {
         std::cerr << e.what() << "\n";
         return -1;
     }
-    catch(const AfterLogError& e) {
+    catch(const AfterLogError& e)
+    {
         pingLogger->log_message(e.what(), true);
         return -1;
     }
 
     // Обрабатываем Ctrl + С для завершения программы.
-    signal(SIGINT, [](int sigint) {
+    signal(SIGINT, [](int sigint)
+    {
         pinger->running = false;
     });
 

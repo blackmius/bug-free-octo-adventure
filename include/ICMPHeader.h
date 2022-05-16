@@ -4,7 +4,8 @@
 #include <netinet/ip_icmp.h> // icmphdr
 
 // Тип представляющий ICMP пакет.
-struct Packet {
+struct Packet
+{
     struct icmphdr hdr;
 
     // Здесь передается время отправки пакета.
