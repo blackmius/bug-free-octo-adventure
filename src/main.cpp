@@ -46,7 +46,7 @@ int main(int argc, char** argv)
                                     {
                                         pinger->running = false;
                                     });
-                                    //test
+                                    
                                     // Пингуем.
                                     int pingCode = pinger->Ping();
                                     switch (pingCode)
