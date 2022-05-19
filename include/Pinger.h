@@ -53,12 +53,11 @@ private:
      */
     uint16_t calculateChecksum(uint16_t* buf, int32_t size);
 
-    // Добавить комментарии.
-
     /**
      * @brief Выполняет отправку пакета.  
      * 
      * @param lastPacketSendTime указатель на переменную, хранящую время отправки последнего пакета.
+     * @return 0 - отправка не производилась, -1 - ошибка отправки, >0 - количество отправленных байт.
      */
     int sendPackage(int64_t *lastPacketSendTime);
 
@@ -67,8 +66,7 @@ private:
      * 
      * @param buffer указатель на буфер получаемого пакета.
      * @param bufferSize размер буфера получаемого пакета.
-     * @return true если получение успешно.
-     * @return false если получение провалено.
+     * @return 0 - сокет пуст, -1 - ошибка получения, >0 - количество полученных байт.
      */
     int recvPackage(unsigned char *buffer, size_t bufferSize);
 
@@ -98,10 +96,12 @@ public:
      * @param host IPv4 или домен хоста.
      * @param pingLogger Указатель на логгер.
      */
-    explicit Pinger(const char* host, PingLogger *pingLogger);
+    Pinger(const char* host, PingLogger *pingLogger);
 
     /**
      * @brief Выполняет функционал ping'a.
+     * 
+     * @return 0 - если ping прошел без ошибок, иначе код ошибки (RECV_ERROR, SEND_ERROR).
      */
     int Ping();
 
@@ -109,8 +109,18 @@ public:
      * @brief Выполняет валидацию переданных аргументов. 
      * 
      * @param argc количество переданных аргументов. 
+     * @return 0 - c аргументами все впорядке, иначе код ошибки (INVALID_ARGUMENTS_COUNT).
      */
     static int ValidateArgs(int argc);
 
+    /**
+     * @brief Создает объект Pinger.
+     * 
+     * @param host IPv4 или домен хоста.
+     * @param pingLogger Указатель на логгер.
+     * @return std::tuple<Pinger*, int> Указатель на объект и 0 если нет ошибок, иначе nullptr и код ошибки (HOST_ERROR, SOCKET_CREATION_ERROR).
+     */
     static std::tuple<Pinger*, int> CreatePinger(const char* host, PingLogger *pingLogger);
+
+    static void Diagnostic(int errorCode, PingLogger* logger = nullptr);
 };

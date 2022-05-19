@@ -25,7 +25,7 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
     // Проверяем хост. Если что не так, выбрасываем исключение.
     if (hostInfo == nullptr)
     {
-        throw HostError("Ivalid host.");
+        throw HostError();
     }
     // Записываем в журнал событие о попытки утилиты получить ip адрес введенного хоста
     pingLogger->log_message("Pinger tries to get ip from address");
@@ -53,7 +53,7 @@ Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger
     if (socket <= 0)
     {
         perror("");
-        throw SocketCreationError("Socket creation failure");
+        throw SocketCreationError();
     }
     // Записываем в журнал событие об успешном создании сокета
     pingLogger->log_message("Socket was successfully created");
@@ -86,7 +86,6 @@ int Pinger::Ping()
 
     // Время отправки последнего пакета.
     int64_t lastPacketSendTime = 0;
-
 
     // Будет выполняться пока пользователь не нажмет Ctrl + C.
     while (running)
@@ -275,7 +274,6 @@ void Pinger::outputStatistic()
     }
 }
 
-
 std::tuple<Pinger*, int> Pinger::CreatePinger(const char* host, PingLogger *pingLogger)
 {
     Pinger* pinger;
@@ -293,4 +291,41 @@ std::tuple<Pinger*, int> Pinger::CreatePinger(const char* host, PingLogger *ping
     }
 
     return std::tuple(pinger, 0);
+}
+
+void Pinger::Diagnostic(int errorCode, PingLogger* logger)
+{
+    std::string errorMessage;
+    switch (errorCode)
+    {
+        case INVALID_ARGUMENTS_COUNT:
+            errorMessage = "Invalid arguments count given. Example: sudo ./ping www.google.com log.log(optional).\n";
+            break;
+        case CANT_OPEN_OR_CREATE_LOG:
+            errorMessage = "Can't open or create log file.\n";
+            break;
+        case HOST_ERROR:
+            errorMessage = "Host detection error.";
+            break;
+        case SOCKET_CREATION_ERROR:
+            errorMessage = "Socket creation failure.";
+            break;
+        case SEND_ERROR:
+            errorMessage = "Error when receiving packet.";
+            break;
+        case RECV_ERROR:
+            errorMessage = "Error when sending packet.";
+            break;
+    }
+
+    if (logger)
+    {
+        logger->log_message(errorMessage, true);
+    }
+    else
+    {
+        std::cerr << errorMessage << '\n';
+    }
+
+    exit(errorCode);
 }

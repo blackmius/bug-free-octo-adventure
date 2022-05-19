@@ -2,20 +2,20 @@
 
 #include <stdexcept> // std::runtime_error
 
-// Класс исключения, используемый до создания логгера. 
-class SocketCreationError : public std::runtime_error
+// Класс исключения, используемый при ошибке создания сокета. 
+class SocketCreationError : public std::exception
 {
 public:
 
-    SocketCreationError(const std::string& message) : std::runtime_error(message) {}
+    SocketCreationError() : std::exception() {}
 
 };
 
-// Класс исключения, используемый после создания логгера.
-class HostError : public std::runtime_error
+// Класс исключения, используемый при ошибке определения хоста.
+class HostError : public std::exception
 {
 public:
 
-    HostError(const std::string& message) : std::runtime_error(message) {}
+    HostError() : std::exception() {}
 
 };

@@ -44,5 +44,12 @@ public:
    */
   void log_message(std::string message, bool show = false);
 
+  /**
+   * @brief Создает новый экземпляр PingLogger
+   * 
+   * @param argc количество аргументов.
+   * @param argv сами аргументы.
+   * @return std::tuple<PingLogger*, int> указатель на логгер и 0 если нет ошибок, иначе nullptr и код ошибки (CANT_OPEN_OR_CREATE_LOG).
+   */
   static std::tuple<PingLogger*, int> CreateLogger(int argc, char **argv);
 };

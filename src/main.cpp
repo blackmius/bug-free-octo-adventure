@@ -42,33 +42,23 @@ int main(int argc, char** argv)
                             switch (pingCode) {
                                 case 0:
                                     return 0;
-                                case SEND_ERROR:
-                                    pingLogger->log_message("Error when sending packet.", true);
-                                    return SEND_ERROR;
-                                case RECV_ERROR:
-                                    pingLogger->log_message("Error when receiving packet.", true);
-                                    return RECV_ERROR;
+                                default:
+                                    Pinger::Diagnostic(pingCode, pingLogger);
                             }
                         }
                         break;
-                        case HOST_ERROR:
-                            pingLogger->log_message("Host detection error.", true);
-                            return HOST_ERROR;
-                        case SOCKET_CREATION_ERROR:
-                            pingLogger->log_message("Socket creation failure.", true);
-                            return SOCKET_CREATION_ERROR;
+                        default:
+                            Pinger::Diagnostic(createPingerCode, pingLogger);
                     }
                 }
                 break;
-                case CANT_OPEN_OR_CREATE_LOG:
-                    std::cerr << "Can't open or create log file.\n";
-                    return CANT_OPEN_OR_CREATE_LOG;
+                default:
+                    Pinger::Diagnostic(createLoggerCode);
             }
         }
         break;
-        case INVALID_ARGUMENTS_COUNT:
-            std::cerr << "Invalid arguments count given. Example: sudo ./ping www.google.com log.log(optional).\n";
-            return INVALID_ARGUMENTS_COUNT;
+        default:
+            Pinger::Diagnostic(validateArgsCode);
     }
     return 0;
 }
