@@ -1,5 +1,6 @@
 #include "PingLogger.h"
 #include "Exceptions.h"
+#include "ErrorCodes.h"
 
 PingLogger::~PingLogger()
 {
@@ -7,20 +8,20 @@ PingLogger::~PingLogger()
   fclose(fd);
 }
 
-PingLogger::PingLogger(const char* path)
+PingLogger::PingLogger(const char *path)
 {
-  fd = fopen (path,"a");
+  fd = fopen(path, "a");
   //Проверяем удалось ли утилите открыть или создать лог-файл
   if (!fd)
   {
-        throw BeforeLogError("Can't open or create log file.");
+    throw std::runtime_error("Can't open or create log file.");
   }
 };
 
 void PingLogger::log_message(std::string message, bool show)
 {
   //Проверяем нужно ли вывести событие в терминале
-  if(show)
+  if (show)
   {
     //Вывод события в терминале
     printf("%s \n", message.c_str());
@@ -34,7 +35,7 @@ std::string PingLogger::time_now()
   //Структура для получения системного времени
   struct tm *u;
   //Строка для того, чтобы сохранить в ней системное время
-  char s1[40] = { 0 };
+  char s1[40] = {0};
   const time_t timer = time(NULL);
   u = localtime(&timer);
   //Преобразования системного времени из структурного типа в строку
@@ -42,14 +43,24 @@ std::string PingLogger::time_now()
   return s1;
 }
 
-PingLogger* PingLogger::CreateLogger(int argc, char **argv)
+std::tuple<PingLogger*, int> PingLogger::CreateLogger(int argc, char **argv)
 {
-  if (argc == 3)
+  PingLogger* logger = nullptr;
+  try
   {
-    return new PingLogger(argv[2]);
+    if (argc == 3)
+    {
+      logger = new PingLogger(argv[2]);
+    }
+    else
+    {
+      logger = new PingLogger();
+    }
   }
-  else
+  catch(const std::runtime_error& e)
   {
-    return new PingLogger();
+    return std::tuple(nullptr, CANT_OPEN_OR_CREATE_LOG);
   }
+
+  return std::tuple(logger, 0);
 }

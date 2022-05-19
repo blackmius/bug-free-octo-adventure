@@ -4,6 +4,7 @@
 #include <fstream> // FILE, fopen(), fprintf(), fclose()
 #include <time.h> // strftime(), localtime(), tm
 #include <iostream> // printf()
+#include <tuple> // std::tuple
 
 /**
  * @brief Журнал
@@ -43,5 +44,5 @@ public:
    */
   void log_message(std::string message, bool show = false);
 
-  static PingLogger* CreateLogger(int argc, char **argv);
+  static std::tuple<PingLogger*, int> CreateLogger(int argc, char **argv);
 };

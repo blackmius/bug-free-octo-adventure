@@ -2,6 +2,7 @@
 
 #include <string> // std::string
 #include <netdb.h> // hostent, gethostbyname(), sockaddr_in
+#include <memory>
 
 #include "PingLogger.h"
 #include "ICMPHeader.h"
@@ -59,7 +60,7 @@ private:
      * 
      * @param lastPacketSendTime указатель на переменную, хранящую время отправки последнего пакета.
      */
-    void sendPackage(int64_t *lastPacketSendTime);
+    int sendPackage(int64_t *lastPacketSendTime);
 
     /**
      * @brief Выполняет получение пакета.
@@ -69,7 +70,7 @@ private:
      * @return true если получение успешно.
      * @return false если получение провалено.
      */
-    bool recvPackage(unsigned char *buffer, size_t bufferSize);
+    int recvPackage(unsigned char *buffer, size_t bufferSize);
 
     /**
      * @brief Обновляет статистику и выводит ифнормацию о последнем полученном пакете.
@@ -102,12 +103,14 @@ public:
     /**
      * @brief Выполняет функционал ping'a.
      */
-    void Ping();
+    int Ping();
 
     /**
      * @brief Выполняет валидацию переданных аргументов. 
      * 
      * @param argc количество переданных аргументов. 
      */
-    static void ValidateArgs(int argc);
+    static int ValidateArgs(int argc);
+
+    static std::tuple<Pinger*, int> CreatePinger(const char* host, PingLogger *pingLogger);
 };
