@@ -10,12 +10,3 @@ public:
     SocketCreationError() : std::exception() {}
 
 };
-
-// Класс исключения, используемый при ошибке определения хоста.
-class HostError : public std::exception
-{
-public:
-
-    HostError() : std::exception() {}
-
-};

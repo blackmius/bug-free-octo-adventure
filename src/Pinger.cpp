@@ -12,32 +12,13 @@
 
 using namespace std::chrono;
 
-Pinger::Pinger(const char* _host, PingLogger* _logger) : host(_host), pingLogger(_logger)
+Pinger::Pinger(const char* _host, const std::string& _ip, PingLogger* _logger) : host(_host), ip(_ip), pingLogger(_logger)
 {
     // Для фомирования отформатированной строки.
     std::stringstream strFormat;
 
     // Записываем в журнал событие о начале создания обьекта 
     pingLogger->log_message("Pinger object initialization");
-
-    // Переводим имя хоста в ip.
-    const hostent* hostInfo = gethostbyname(_host);
-    // Проверяем хост. Если что не так, выбрасываем исключение.
-    if (hostInfo == nullptr)
-    {
-        throw HostError();
-    }
-    // Записываем в журнал событие о попытки утилиты получить ip адрес введенного хоста
-    pingLogger->log_message("Pinger tries to get ip from address");
-
-    in_addr addr;
-    addr.s_addr = *(ulong*)hostInfo->h_addr_list[0];
-
-    ip = inet_ntoa(addr);
-    // Записываем в журнал событие об успешном получении ip адреса
-    strFormat << "Pinger got ip: " << ip.c_str() << "from address";
-    pingLogger->log_message(strFormat.str());
-    strFormat.str().resize(0); //Очищаем форматированную строку
     
     timeout *= 10e8;
 
@@ -274,16 +255,12 @@ void Pinger::outputStatistic()
     }
 }
 
-std::tuple<Pinger*, int> Pinger::CreatePinger(const char* host, PingLogger *pingLogger)
+std::tuple<Pinger*, int> Pinger::CreatePinger(const char* host, const std::string& ip, PingLogger *pingLogger)
 {
     Pinger* pinger;
     try
     {
-        pinger = new Pinger(host, pingLogger);
-    }
-    catch(const HostError& e)
-    {
-        return std::tuple(nullptr, HOST_ERROR);
+        pinger = new Pinger(host, ip, pingLogger);
     }
     catch(const SocketCreationError& e)
     {
@@ -293,7 +270,7 @@ std::tuple<Pinger*, int> Pinger::CreatePinger(const char* host, PingLogger *ping
     return std::tuple(pinger, 0);
 }
 
-void Pinger::Diagnostic(int errorCode, PingLogger* logger)
+void Pinger::EndWithError(int errorCode, PingLogger* logger)
 {
     std::string errorMessage;
     switch (errorCode)
@@ -328,4 +305,32 @@ void Pinger::Diagnostic(int errorCode, PingLogger* logger)
     }
 
     exit(errorCode);
+}
+
+std::tuple<std::string, int> Pinger::GetIp(const char* host)
+{
+    std::stringstream strFormat;
+
+    sockaddr_in s;
+    int result = inet_pton(AF_INET, host, &(s.sin_addr));
+    if (result != 0)
+    {
+        return std::tuple(std::string(host), 0);
+    }
+    else
+    {
+        // Переводим имя хоста в ip.
+        const hostent* hostInfo = gethostbyname(host);
+        // Проверяем хост. Если что не так, выбрасываем исключение.
+        if (hostInfo == nullptr)
+        {
+            return std::tuple("", HOST_ERROR);
+        }
+        // Записываем в журнал событие о попытки утилиты получить ip адрес введенного хоста
+
+        in_addr addr;
+        addr.s_addr = *(ulong*)hostInfo->h_addr_list[0];
+
+        return std::tuple(inet_ntoa(addr), 0);
+    }
 }

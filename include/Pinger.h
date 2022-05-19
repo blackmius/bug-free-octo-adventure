@@ -96,7 +96,7 @@ public:
      * @param host IPv4 или домен хоста.
      * @param pingLogger Указатель на логгер.
      */
-    Pinger(const char* host, PingLogger *pingLogger);
+    Pinger(const char* host, const std::string& ip, PingLogger *pingLogger);
 
     /**
      * @brief Выполняет функционал ping'a.
@@ -120,7 +120,9 @@ public:
      * @param pingLogger Указатель на логгер.
      * @return std::tuple<Pinger*, int> Указатель на объект и 0 если нет ошибок, иначе nullptr и код ошибки (HOST_ERROR, SOCKET_CREATION_ERROR).
      */
-    static std::tuple<Pinger*, int> CreatePinger(const char* host, PingLogger *pingLogger);
+    static std::tuple<Pinger*, int> CreatePinger(const char* host, const std::string& ip, PingLogger *pingLogger);
 
-    static void Diagnostic(int errorCode, PingLogger* logger = nullptr);
+    static void EndWithError(int errorCode, PingLogger* logger = nullptr);
+
+    static std::tuple<std::string, int> GetIp(const char* host);
 };
