@@ -94,8 +94,6 @@ int Pinger::Ping()
         // Пробуем отправить пакет.
         int sendResult = sendPackage(&lastPacketSendTime);
         switch (sendResult) {
-            case 0:
-                break;
             case -1:
                 return SEND_ERROR;
             default:
@@ -112,6 +110,7 @@ int Pinger::Ping()
                     default:
                         updateStatistic(buffer, sizeof(buffer));
                 }
+                break;
         }
     }
     // Отправка пакетов завершена.
