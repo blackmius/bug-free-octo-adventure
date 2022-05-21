@@ -10,3 +10,12 @@ public:
     SocketCreationError() : std::exception() {}
 
 };
+
+// Класс исключения, используемый при ошибке записи данных в журнал. 
+class LogWriteError : public std::exception
+{
+public:
+
+    LogWriteError() : std::exception() {}
+
+};

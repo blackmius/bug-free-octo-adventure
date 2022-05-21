@@ -41,8 +41,10 @@ public:
    * @param show при указании show=true выводить сообщение в stdout
    *             сделано, чтобы все сообщения для пользователя также
    *             попадали в журнал
+   * @return 0 - запись прошла успешно, иначе -1.
+   * 
    */
-  void log_message(std::string message, bool show = false);
+  int log_message(std::string message, bool show = false);
 
   /**
    * @brief Создает новый экземпляр PingLogger

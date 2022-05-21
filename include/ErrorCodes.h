@@ -4,3 +4,4 @@ const int HOST_ERROR = 203;
 const int SOCKET_CREATION_ERROR = 204;
 const int SEND_ERROR = 205;
 const int RECV_ERROR = 206;
+const int LOG_WRITE_ERROR = 207;

@@ -17,13 +17,28 @@ Pinger::Pinger(const char* _host, const std::string& _ip, PingLogger* _logger) :
     // Для фомирования отформатированной строки.
     std::stringstream strFormat;
 
+    // Проверка записи данных в лог
+    int wroteResult;
+
     // Записываем в журнал событие о начале создания обьекта 
-    pingLogger->log_message("Pinger object initialization");
+    wroteResult = pingLogger->log_message("Pinger object initialization");
+
+    if (wroteResult != 0)
+    {
+        perror("");
+        throw LogWriteError();
+    }
     
     timeout *= 10e8;
 
     // Записываем в журнал событие о попытки создать сокет
-    pingLogger->log_message("Pinger tries to create socket");
+    wroteResult = pingLogger->log_message("Pinger tries to create socket");
+
+        if (wroteResult != 0)
+    {
+        perror("");
+        throw LogWriteError();
+    }
     // Готовим информацию, необходимую для создания сокета.
     sockAddr.sin_family = AF_INET;
     sockAddr.sin_port = 1025;
@@ -37,7 +52,13 @@ Pinger::Pinger(const char* _host, const std::string& _ip, PingLogger* _logger) :
         throw SocketCreationError();
     }
     // Записываем в журнал событие об успешном создании сокета
-    pingLogger->log_message("Socket was successfully created");
+    wroteResult = pingLogger->log_message("Socket was successfully created");
+
+    if (wroteResult != 0)
+    {
+        perror("");
+        throw LogWriteError();
+    }
 
     // Инициализируем переменные статистики.
     sendPacketsCount = 0;
@@ -51,18 +72,26 @@ Pinger::Pinger(const char* _host, const std::string& _ip, PingLogger* _logger) :
     zhmih = 0.0;
 
     // Записываем в журнал событие об успешной инициализации объекта Pinger
-    pingLogger->log_message("Pinger object initialization complete");
+    wroteResult = pingLogger->log_message("Pinger object initialization complete");
+
+    if (wroteResult != 0)
+    {
+        perror("");
+        throw LogWriteError();
+    }
 
 }
 
 int Pinger::Ping()
 {
-    // Записываем в журнал событие о начале пинга
-    pingLogger->log_message("Starting ping");
-
+    // Проверка записи данных в лог
+    int wroteResult;
     std::stringstream strFormat;
     strFormat << "PING " << host.c_str() << " (" << ip.c_str() << ").";
-    pingLogger->log_message(strFormat.str(), true);
+    wroteResult = pingLogger->log_message(strFormat.str(), true);
+    if (wroteResult !=0)
+        return LOG_WRITE_ERROR;
+
     strFormat.str("");
 
     // Время отправки последнего пакета.
@@ -82,13 +111,21 @@ int Pinger::Ping()
                 unsigned char buffer[36] = "";
 
                 int recvResult = recvPackage(buffer, sizeof(buffer));
-                switch (recvResult) {
+                switch (recvResult)
+                {
                     case 0:
                         break;
                     case -1:
                         return RECV_ERROR;
                     default:
-                        updateStatistic(buffer, sizeof(buffer));
+                        int updateResult = updateStatistic(buffer, sizeof(buffer));
+                        switch (updateResult)
+                        {
+                        case 0:
+                            break;
+                        case -1:
+                            return LOG_WRITE_ERROR;
+                        }
                 }
                 break;
         }
@@ -96,10 +133,14 @@ int Pinger::Ping()
     // Отправка пакетов завершена.
 
     // Выводим статистику.
-    outputStatistic();
-
-    // Записываем в журнал событие об успешном завершении работы утилиты
-    pingLogger->log_message("Ping is completed");
+    int outputResult = outputStatistic();
+    switch (outputResult)
+    {
+    case 0:
+        break;
+    case -1:
+        return LOG_WRITE_ERROR;
+    }
 
     return 0;
 }
@@ -192,7 +233,7 @@ int Pinger::recvPackage(unsigned char *buffer, size_t bufferSize)
     return recvResult;
 }
 
-void Pinger::updateStatistic(unsigned char *buffer, size_t bufferSize)
+int Pinger::updateStatistic(unsigned char *buffer, size_t bufferSize)
 {
     // Фиксируем время получения пакета.
     int64_t now = high_resolution_clock::now().time_since_epoch().count();
@@ -229,30 +270,42 @@ void Pinger::updateStatistic(unsigned char *buffer, size_t bufferSize)
     // Выводим информацию о последнем пинге.
     std::stringstream strFormat;
     strFormat << bufferSize <<" bytes from "<<ip.c_str()<<": icmp_seq="<<pckt.hdr.un.echo.sequence<<" time="<<time<<" ms";
-    pingLogger->log_message(strFormat.str(), true);
+    int wroteResult = pingLogger->log_message(strFormat.str(), true);
+    if (wroteResult != 0)
+        return -1;
+
+    return 0;
 }
 
-void Pinger::outputStatistic()
+int Pinger::outputStatistic()
 {
     // Считаем потери пакетов.
     double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;
-
+    // Проверка записи данных в лог
+    int wroteResult;
     // Выводим статистику. 
     std::stringstream strFormat;
     strFormat<<"\n--- "<<ip.c_str()<<" ping statistic ---";
-    pingLogger->log_message(strFormat.str(), true);
+    wroteResult = pingLogger->log_message(strFormat.str(), true);
+    if (wroteResult != 0)
+        return -1;
     strFormat.str("");
 
     strFormat<<sendPacketsCount<<" sent, "<<recvPacketsCount<<" received, "<<packetLoss<<"% packet loss";
-    pingLogger->log_message(strFormat.str(), true);
+    wroteResult = pingLogger->log_message(strFormat.str(), true);
+    if (wroteResult != 0)
+        return -1;
     strFormat.str("");
     
     // Если мы ничего не получили, то выводить статистику по времени нет смысла.
     if (recvPacketsCount != 0)
     {
         strFormat<<"rtt min/avg/max/mdev = "<<minPingTime<<"/"<<avgPingTime<<"/"<<maxPingTime<<"/"<<mdev<<" ms";
-        pingLogger->log_message(strFormat.str(), true);
+        wroteResult = pingLogger->log_message(strFormat.str(), true);
+        if (wroteResult != 0)
+            return -1;
     }
+    return 0;
 }
 
 std::tuple<Pinger*, int> Pinger::CreatePinger(const char* host, const std::string& ip, PingLogger *pingLogger)
@@ -265,6 +318,10 @@ std::tuple<Pinger*, int> Pinger::CreatePinger(const char* host, const std::strin
     catch(const SocketCreationError& e)
     {
         return std::tuple(nullptr, SOCKET_CREATION_ERROR);
+    }
+    catch(const LogWriteError& e)
+    {
+        return std::tuple(nullptr, LOG_WRITE_ERROR);
     }
 
     return std::tuple(pinger, 0);
@@ -293,11 +350,19 @@ void Pinger::EndWithError(int errorCode, PingLogger* logger)
         case RECV_ERROR:
             errorMessage = "Error when sending packet.";
             break;
+        case LOG_WRITE_ERROR:
+            errorMessage = "Can't write event in log file.\n";
+            break;
     }
 
     if (logger)
     {
-        logger->log_message(errorMessage, true);
+        int wroteResult = logger->log_message(errorMessage, true);
+        if (wroteResult != 0)
+        {
+            std::cerr << errorMessage << '\n';
+            EndWithError(LOG_WRITE_ERROR);
+        }
     }
     else
     {

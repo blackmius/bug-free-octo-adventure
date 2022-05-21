@@ -24,43 +24,71 @@ int main(int argc, char** argv)
             {
                 case 0:
                 {
-                    // Создаем логгер. В идеале не забыть удалить.
+                    // Создаем логгер.
                     auto [pingLogger, createLoggerCode] = PingLogger::CreateLogger(argc, argv);
                     switch (createLoggerCode)
                     {
                         case 0:
                         {
-                            // Записываем в журнал событие о начале работы приложения    
-                            pingLogger->log_message("Starting application");
-
-                            // Создаем объект Pinger.
-                            auto [p, createPingerCode]= Pinger::CreatePinger(argv[1], ip, pingLogger);
-                            switch (createPingerCode)
+                            int wroteResult = pingLogger->log_message("Starting program");
+                            switch (wroteResult)
                             {
                                 case 0:
                                 {
-                                    pinger = std::unique_ptr<Pinger>(p);
-
-                                    // Обрабатываем Ctrl + С для завершения программы.
-                                    signal(SIGINT, [](int sigint)
-                                    {
-                                        pinger->running = false;
-                                    });
-                                    
-                                    // Пингуем.
-                                    int pingCode = pinger->Ping();
-                                    switch (pingCode)
+                                    // Создаем объект Pinger.
+                                    auto [p, createPingerCode]= Pinger::CreatePinger(argv[1], ip, pingLogger);
+                                    switch (createPingerCode)
                                     {
                                         case 0:
-                                            return 0;
-                                        case SEND_ERROR:
-                                        case RECV_ERROR:
-                                            Pinger::EndWithError(pingCode, pingLogger);
+                                        {
+                                            pinger = std::unique_ptr<Pinger>(p);
+
+                                            // Обрабатываем Ctrl + С для завершения программы.
+                                            signal(SIGINT, [](int sigint)
+                                            {
+                                                pinger->running = false;
+                                            });
+                                            
+                                            // Пингуем.
+                                            int pingCode = pinger->Ping();
+                                            switch (pingCode)
+                                            {
+                                                case 0:
+                                                {
+                                                    wroteResult = pingLogger->log_message("Ping is completed");
+                                                    switch (wroteResult)
+                                                    {
+                                                        case 0:
+                                                            return 0;
+                                                        case -1:
+                                                            Pinger::EndWithError(LOG_WRITE_ERROR);
+                                                            break;
+                                                    }
+                                                }
+                                                break;
+                                                case SEND_ERROR:
+                                                case RECV_ERROR:
+                                                    Pinger::EndWithError(pingCode, pingLogger);
+                                                    break;
+                                                case LOG_WRITE_ERROR:
+                                                    Pinger::EndWithError(pingCode);
+                                                    break;
+                                            }
+                                        }
+                                        break;
+                                        case SOCKET_CREATION_ERROR:
+                                            Pinger::EndWithError(createPingerCode, pingLogger);
+                                            break;
+                                        case LOG_WRITE_ERROR:
+                                            Pinger::EndWithError(createPingerCode);
+                                            break;
                                     }
                                 }
                                 break;
-                                case SOCKET_CREATION_ERROR:
-                                    Pinger::EndWithError(createPingerCode, pingLogger);
+                                
+                                case -1:
+                                    Pinger::EndWithError(LOG_WRITE_ERROR);
+                                    break;
                             }
                         }
                         break;

@@ -75,13 +75,17 @@ private:
      * 
      * @param buffer указатель на буфер полученого пакета. 
      * @param bufferSize размер буфера полученного пакета.
+     * 
+     * @return 0 - Обновление статистики вывод и запись в лог прошли успешно, -1 - При записи в лог произошла ошибка
      */
-    void updateStatistic(unsigned char *buffer, size_t bufferSize);
+    int updateStatistic(unsigned char *buffer, size_t bufferSize);
 
     /**
      * @brief Выводит финальную статистику работы пинга.
+     * 
+     * @return 0 - Вывод и запись в лог прошли успешно, -1 - При записи в лог произошла ошибка
      */
-    void outputStatistic();
+    int outputStatistic();
 
 public:
 

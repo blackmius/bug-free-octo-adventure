@@ -18,8 +18,9 @@ PingLogger::PingLogger(const char *path)
   }
 };
 
-void PingLogger::log_message(std::string message, bool show)
+int PingLogger::log_message(std::string message, bool show)
 {
+  int wrote; //переменная для записи события в лог
   //Проверяем нужно ли вывести событие в терминале
   if (show)
   {
@@ -27,7 +28,13 @@ void PingLogger::log_message(std::string message, bool show)
     printf("%s \n", message.c_str());
   }
   //Запись события в журнал
-  fprintf(fd, "%s - %s \n", time_now().c_str(), message.c_str());
+  wrote = fprintf(fd, "%s - %s \n", time_now().c_str(), message.c_str());
+  //Проверяем записалось ли событие в лог
+  if (wrote < 0)
+  {
+    return -1;
+  }
+  return 0;
 }
 
 std::string PingLogger::time_now()
