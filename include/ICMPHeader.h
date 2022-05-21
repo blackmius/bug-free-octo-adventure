@@ -1,3 +1,5 @@
+// Файл описывающий структуру ICMP-пакета.
+
 #pragma once
 
 #include <cstdint> // uint64_t

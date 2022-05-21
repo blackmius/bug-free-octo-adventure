@@ -1,3 +1,5 @@
+// Файл пользовательский исключений.
+
 #pragma once
 
 #include <stdexcept> // std::runtime_error

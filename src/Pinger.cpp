@@ -110,6 +110,7 @@ int Pinger::Ping()
                 // 20 байт - ip-пакет + 16 байт - icmp-пакет.
                 unsigned char buffer[36] = "";
 
+                // Пробуем получить пакет.
                 int recvResult = recvPackage(buffer, sizeof(buffer));
                 switch (recvResult)
                 {
@@ -219,7 +220,7 @@ int Pinger::recvPackage(unsigned char *buffer, size_t bufferSize)
     FD_ZERO(&fd);
     FD_SET(socket, &fd);
     int n = select(socket+1, &fd, 0, 0, &tv);
-    if (n <= 0)
+    if (n <= 0) // В сокете ничего нет.
     {
         return 0;
     }
@@ -281,8 +282,10 @@ int Pinger::outputStatistic()
 {
     // Считаем потери пакетов.
     double packetLoss = (sendPacketsCount - recvPacketsCount) / sendPacketsCount * 100;
+
     // Проверка записи данных в лог
     int wroteResult;
+
     // Выводим статистику. 
     std::stringstream strFormat;
     strFormat<<"\n--- "<<ip.c_str()<<" ping statistic ---";
@@ -329,6 +332,7 @@ std::tuple<Pinger*, int> Pinger::CreatePinger(const char* host, const std::strin
 
 void Pinger::EndWithError(int errorCode, PingLogger* logger)
 {
+    // Выбираем сообщение ошибки.
     std::string errorMessage;
     switch (errorCode)
     {
@@ -354,7 +358,8 @@ void Pinger::EndWithError(int errorCode, PingLogger* logger)
             errorMessage = "Can't write event in log file.\n";
             break;
     }
-
+    
+    // Выводим ошибку.
     if (logger)
     {
         int wroteResult = logger->log_message(errorMessage, true);
@@ -376,6 +381,7 @@ std::tuple<std::string, int> Pinger::GetIp(const char* host)
 {
     std::stringstream strFormat;
 
+    // Проверяем, является ли переданный пользователь хост строкой формата IPv4.
     sockaddr_in s;
     int result = inet_pton(AF_INET, host, &(s.sin_addr));
     if (result != 0)

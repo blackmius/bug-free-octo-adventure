@@ -1,3 +1,5 @@
+// Файл содержащий определение класса, полей и функций, необходимых для работы ping'a.
+
 #pragma once
 
 #include <string> // std::string
@@ -34,7 +36,7 @@ private:
     double preAvgPingTime;
     double mdev;
 
-    // реккурентное стандартное отклонение
+    // Реккурентное стандартное отклонение
     // http://www.scalaformachinelearning.com/2015/10/recursive-mean-and-standard-deviation.html
     double zhmih;
 
@@ -57,7 +59,7 @@ private:
      * @brief Выполняет отправку пакета.  
      * 
      * @param lastPacketSendTime указатель на переменную, хранящую время отправки последнего пакета.
-     * @return 0 - отправка не производилась, -1 - ошибка отправки, >0 - количество отправленных байт.
+     * @return 0 - отправка не производилась, -1 - ошибка отправки, > 0 - количество отправленных байт.
      */
     int sendPackage(int64_t *lastPacketSendTime);
 
@@ -98,6 +100,7 @@ public:
      * @brief Создает новый экземпляр Pinger
      * 
      * @param host IPv4 или домен хоста.
+     * @param ip Строго IPv4 хоста.
      * @param pingLogger Указатель на логгер.
      */
     Pinger(const char* host, const std::string& ip, PingLogger *pingLogger);
@@ -105,7 +108,7 @@ public:
     /**
      * @brief Выполняет функционал ping'a.
      * 
-     * @return 0 - если ping прошел без ошибок, иначе код ошибки (RECV_ERROR, SEND_ERROR).
+     * @return 0 - если ping прошел без ошибок, иначе код ошибки (RECV_ERROR, SEND_ERROR, LOG_WRITE_ERROR).
      */
     int Ping();
 
@@ -122,11 +125,23 @@ public:
      * 
      * @param host IPv4 или домен хоста.
      * @param pingLogger Указатель на логгер.
-     * @return std::tuple<Pinger*, int> Указатель на объект и 0 если нет ошибок, иначе nullptr и код ошибки (HOST_ERROR, SOCKET_CREATION_ERROR).
+     * @return std::tuple<Pinger*, int> Указатель на объект и 0 если нет ошибок, иначе nullptr и код ошибки (SOCKET_CREATION_ERROR, LOG_WRITE_ERROR).
      */
     static std::tuple<Pinger*, int> CreatePinger(const char* host, const std::string& ip, PingLogger *pingLogger);
 
+    /**
+     * @brief Выводит сообщение ошибки и завершает программу.
+     * 
+     * @param errorCode Код ошибки.
+     * @param logger Указатель на логгер.
+     */
     static void EndWithError(int errorCode, PingLogger* logger = nullptr);
 
+    /**
+     * @brief Определяет IPv4 хоста, если это необходимо.
+     * 
+     * @param host IPv4 или домен хоста.
+     * @return std::tuple<std::string, int> IPv4 хоста и 0 если нет ошибок, иначе пустую строку и код ошибки (HOST_ERROR).
+     */
     static std::tuple<std::string, int> GetIp(const char* host);
 };
