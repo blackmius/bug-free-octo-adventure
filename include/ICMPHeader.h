@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <cstdint> // uint64_t
+#include <cstdint>           // uint64_t
 #include <netinet/ip_icmp.h> // icmphdr
 
 // Тип представляющий ICMP пакет.

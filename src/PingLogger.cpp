@@ -50,9 +50,9 @@ std::string PingLogger::time_now()
   return s1;
 }
 
-std::tuple<PingLogger*, int> PingLogger::CreateLogger(int argc, char **argv)
+std::tuple<PingLogger *, int> PingLogger::CreateLogger(int argc, char **argv)
 {
-  PingLogger* logger = nullptr;
+  PingLogger *logger = nullptr;
   try
   {
     if (argc == 3)
@@ -64,7 +64,7 @@ std::tuple<PingLogger*, int> PingLogger::CreateLogger(int argc, char **argv)
       logger = new PingLogger();
     }
   }
-  catch(const std::runtime_error& e)
+  catch (const std::runtime_error &e)
   {
     return std::tuple(nullptr, CANT_OPEN_OR_CREATE_LOG);
   }
